@@ -34,7 +34,6 @@ export class BetKnessetTimesStack extends Stack {
 
     const weeklyDocGenHandler = new lambda_nodejs.NodejsFunction(this, "WeeklyDocGenerator", {
       depsLockFilePath: './package-lock.json', 
-      entry: './src/timesGeneratorHandler.ts',
       entry: './src/timesHandler.ts',
       handler: "handler",
       timeout: Duration.seconds(180),
