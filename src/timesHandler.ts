@@ -18,7 +18,7 @@ exports.handler = async (event) => {
 
   const day_shacharit = Moment('08:00','HH:mm');
   const day_mincha_1 = Moment('12:45','HH:mm');
-  if (params.dst) {
+  if (params.dst === "true") {
      day_shacharit.add(30,'minute');
      day_mincha_1.add(30,'minute');
   }
