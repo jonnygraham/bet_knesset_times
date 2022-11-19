@@ -52,7 +52,7 @@ exports.handler = async (event) => {
   const shabbatDate = Moment().add(6-Moment().day(),'day').format("YYYY-MM-DD");
   console.log("Shabbat date is "+shabbatDate);
   console.log("Calendar details for this date: "+calendar[shabbatDate]);
-  const params = event.queryStringParameters;
+  const params = event.queryStringParameters ?? {};
   const shkia = params.shkia ?? calendar[shabbatDate].shkia;
 
   const shkiaMoment = Moment(shkia,"HH:mm");
