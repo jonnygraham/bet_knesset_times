@@ -73,7 +73,7 @@ exports.handler = async (event) => {
 
   const calculatedParams = {
     ...params,
-    parsha: params.parsha ?? calendar[shabbatDate].parsha;
+    parsha: params.parsha ?? calendar[shabbatDate].parsha,
     erev_mincha: params.erev_mincha ?? erev_mincha.format('HH:mm'),
     day_shacharit: params.day_shacharit ?? day_shacharit.format('HH:mm'),
     day_womens_shiur: params.day_womens_shiur ?? day_womens_shiur.format('HH:mm'),
