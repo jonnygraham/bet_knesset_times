@@ -71,7 +71,7 @@ exports.handler = async (event) => {
      day_mincha_1.add(30,'minute');
   }
   const day_mincha_1_shiur = day_mincha_1.clone().add(20,'minute');
-  const day_womens_shiur = day_shacharit.clone().add(2,'hour');
+  const day_womens_shiur = day_shacharit.clone().add(2,'hour').add(10,'minute');
 
   const calculatedParams = {
     ...params,
