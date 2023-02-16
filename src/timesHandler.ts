@@ -19,11 +19,11 @@ exports.handler = async (event) => {
 "2023-01-28":{parsha:"בא",shkia:"17:10"},
 "2023-02-04":{parsha:"בשלח",shkia:"17:16"},
 "2023-02-11":{parsha:"יתרו",shkia:"17:23"},
-"2023-02-18":{parsha:"משפטים",shkia:"17:29"},
+"2023-02-18":{parsha:"משפטים",shkia:"17:29",special:"שקלים"},
 "2023-02-25":{parsha:"תרומה",shkia:"17:34"},
 "2023-03-04":{parsha:"תצוה",shkia:"17:40"},
 "2023-03-11":{parsha:"כי תשא",shkia:"17:45"},
-"2023-03-18":{parsha:"ויקהל פקודי",shkia:"17:50"},
+"2023-03-18":{parsha:"ויקהל פקודי",shkia:"17:50",special="ר״ח - החודש"},
 "2023-03-25":{parsha:"ויקרא",shkia:"18:54"},
 "2023-04-01":{parsha:"צו",shkia:"18:59"},
 "2023-04-08":{parsha:"שבת חול המועד",shkia:"19:04"},
@@ -73,15 +73,24 @@ exports.handler = async (event) => {
   const day_mincha_1_shiur = day_mincha_1.clone().add(20,'minute');
   const day_womens_shiur = day_shacharit.clone().add(2,'hour').add(10,'minute');
 
+  const week_mincha = Moment('17:15','HH:mm');
+  const week_arvit_1 = week_mincha.clone().add(45,'minute');
   const calculatedParams = {
     ...params,
     parsha: params.parsha ?? calendar[shabbatDate].parsha,
+    shabbat_special: params.shabbat_special ?? calendar[shabbatDate].special,
     erev_mincha: params.erev_mincha ?? erev_mincha.format('HH:mm'),
     day_shacharit: params.day_shacharit ?? day_shacharit.format('HH:mm'),
     day_womens_shiur: params.day_womens_shiur ?? day_womens_shiur.format('HH:mm'),
     day_mincha_1: params.day_mincha_1 ?? day_mincha_1.format('HH:mm'),
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
-    day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm')
+    day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm'),
+    week_shacharit_1: "06:15 (יום ג,ד ר״ח 06:05)",
+    week_shacharit_2: "07:10",
+    week_shacharit_3: "יום ו 08:15",
+    week_mincha: week_mincha.format('HH:mm'),
+    week_arvit_1: week_arvit_1.format('HH:mm'),
+    week_arvit_2: "21:15"
   } 
   const timesGeneratorLambdaParams = {
     FunctionName: process.env.DOC_GEN_LAMBDA_NAME,
