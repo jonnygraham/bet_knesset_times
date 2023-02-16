@@ -88,7 +88,7 @@ exports.handler = async (event) => {
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
     day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm'),
     motzash_arvit: motzash_arvit.format('HH:mm'),
-    week_shacharit_1: "06:15 (יום ג,ד ר״ח 06:05)",
+    week_shacharit_1: "(יום ג,ד ר״ח 06:05) 06:15",
     week_shacharit_2: "07:10",
     week_shacharit_3: "יום ו 08:15",
     week_mincha: week_mincha.format('HH:mm'),
