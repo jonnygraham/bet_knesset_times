@@ -73,6 +73,8 @@ exports.handler = async (event) => {
   const day_mincha_1_shiur = day_mincha_1.clone().add(20,'minute');
   const day_womens_shiur = day_shacharit.clone().add(2,'hour').add(10,'minute');
 
+  const motzash_arvit = Moment('18:05','HH:mm');
+  
   const week_mincha = Moment('17:15','HH:mm');
   const week_arvit_1 = week_mincha.clone().add(45,'minute');
   const calculatedParams = {
@@ -85,6 +87,7 @@ exports.handler = async (event) => {
     day_mincha_1: params.day_mincha_1 ?? day_mincha_1.format('HH:mm'),
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
     day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm'),
+    motzash_arvit: motzash_arvit.format('HH:mm'),
     week_shacharit_1: "06:15 (יום ג,ד ר״ח 06:05)",
     week_shacharit_2: "07:10",
     week_shacharit_3: "יום ו 08:15",
