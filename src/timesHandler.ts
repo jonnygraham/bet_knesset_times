@@ -52,12 +52,13 @@ exports.handler = async (event) => {
 "2023-08-26":{parsha:"כי תצא",shkia:"19:12"}
   };
  
-  const shabbatDate = Moment().add(6-Moment().day(),'day').format("YYYY-MM-DD");
+  const shabbat = Moment().add(6-Moment().day(),'day');
+  const shabbatDate = shabbat.format("YYYY-MM-DD");
   console.log("Shabbat date is "+shabbatDate);
   console.log("Calendar details for this date: "+calendar[shabbatDate]);
   const params = event.queryStringParameters ?? {};
 
-  const shkia = params.shkia ?? await fetchTime(shabbatDate, 'שקיעה מישורית'); //calendar[shabbatDate].shkia;
+  const shkia = params.shkia ?? await fetchTime(shabbat, 'שקיעה מישורית'); //calendar[shabbatDate].shkia;
 
   const shkiaMoment = Moment(shkia,"HH:mm");
   const erev_mincha = shkiaMoment.clone().subtract(12,'minute');
@@ -77,12 +78,12 @@ exports.handler = async (event) => {
   const day_mincha_1_shiur = day_mincha_1.clone().add(20,'minute');
   const day_womens_shiur = day_shacharit.clone().add(2,'hour').add(10,'minute');
 
-  const motzash_arvit = await fetchTime(shabbatDate, 'צאת השבת');
+  const motzash_arvit = await fetchTime(shabbat, 'צאת השבת');
   
   // Weekday times
 
-  const sunday = shabbatDate.clone().add(1,'day');
-  const thursday = shabbatDate.clone().add(5,'day');
+  const sunday = shabbat.clone().add(1,'day');
+  const thursday = shabbat.clone().add(5,'day');
   
   const shkia1 = await fetchTime(sunday, 'שקיעה מישורית');
   const shkia2 = await fetchTime(thursday, 'שקיעה מישורית');
