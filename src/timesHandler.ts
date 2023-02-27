@@ -1,8 +1,10 @@
 const Moment = require('moment');
 
+import {fetchTime} from "./lookupTimes"
+
 const AWS = require("aws-sdk");
 const lambda = new AWS.Lambda();
-export {}
+
 exports.handler = async (event) => {
 
   const calendar= {
@@ -22,11 +24,11 @@ exports.handler = async (event) => {
 "2023-02-11":{parsha:"יתרו",shkia:"17:23"},
 "2023-02-18":{parsha:"משפטים",shkia:"17:29",special:"שקלים"},
 "2023-02-25":{parsha:"תרומה",shkia:"17:34"},
-"2023-03-04":{parsha:"תצוה",shkia:"17:40"},
+"2023-03-04":{parsha:"תצוה",shkia:"17:40",special:"זכור"},
 "2023-03-11":{parsha:"כי תשא",shkia:"17:45"},
 "2023-03-18":{parsha:"ויקהל פקודי",shkia:"17:50",special:"ר״ח - החודש"},
 "2023-03-25":{parsha:"ויקרא",shkia:"18:54"},
-"2023-04-01":{parsha:"צו",shkia:"18:59"},
+"2023-04-01":{parsha:"צו",shkia:"18:59",special:"הגדול"},
 "2023-04-08":{parsha:"שבת חול המועד",shkia:"19:04"},
 "2023-04-15":{parsha:"שמיני",shkia:"19:09"},
 "2023-04-22":{parsha:"תזריע מצורע",shkia:"19:13"},
@@ -54,7 +56,8 @@ exports.handler = async (event) => {
   console.log("Shabbat date is "+shabbatDate);
   console.log("Calendar details for this date: "+calendar[shabbatDate]);
   const params = event.queryStringParameters ?? {};
-  const shkia = params.shkia ?? calendar[shabbatDate].shkia;
+
+  const shkia = params.shkia ?? await fetchTime(shabbatDate, 'שקיעה מישורית'); //calendar[shabbatDate].shkia;
 
   const shkiaMoment = Moment(shkia,"HH:mm");
   const erev_mincha = shkiaMoment.clone().subtract(12,'minute');
@@ -74,10 +77,35 @@ exports.handler = async (event) => {
   const day_mincha_1_shiur = day_mincha_1.clone().add(20,'minute');
   const day_womens_shiur = day_shacharit.clone().add(2,'hour').add(10,'minute');
 
-  const motzash_arvit = Moment('18:05','HH:mm');
+  const motzash_arvit = await fetchTime(shabbatDate, 'צאת השבת');
   
-  const week_mincha = Moment('17:15','HH:mm');
-  const week_arvit_1 = week_mincha.clone().add(45,'minute');
+  // Weekday times
+
+  const sunday = shabbatDate.clone().add(1,'day');
+  const thursday = shabbatDate.clone().add(5,'day');
+  
+  const shkia1 = await fetchTime(sunday, 'שקיעה מישורית');
+  const shkia2 = await fetchTime(thursday, 'שקיעה מישורית');
+  console.log(shkia1);
+  console.log(shkia2);
+  const earliestShikia = shkia1.isBefore(shkia2) ? shkia1 : shkia2;
+  console.log(earliestShikia);
+  const week_mincha = earliestShikia.clone().subtract(earliestShikia.get('minute')%5,'minute'); // Round down to 5 minutes
+
+  const tzet1 = await fetchTime(sunday,'צאת הכוכבים');
+  const tzet2 = await fetchTime(thursday,'צאת הכוכבים');
+  console.log(tzet1);
+  console.log(tzet2);
+  const latestTzet = tzet1.isAfter(tzet2) ? tzet1 : tzet2;
+  latestTzet.subtract(1,'minute');
+  const week_arvit_1 = latestTzet.clone();
+  if (week_arvit_1.get('minute')%5 > 0) {
+    week_arvit_1.add(5-latestTzet.get('minute')%5,'minute'); // Round up to 5 minutes
+  }
+  console.log(latestTzet);
+  console.log(week_arvit_1);
+
+
   const calculatedParams = {
     ...params,
     parsha: params.parsha ?? calendar[shabbatDate].parsha,
@@ -89,7 +117,7 @@ exports.handler = async (event) => {
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
     day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm'),
     motzash_arvit: motzash_arvit.format('HH:mm'),
-    week_shacharit_1: "(יום ג,ד ר״ח 06:05) 06:15",
+    week_shacharit_1: "יום א-ה 06:15",
     week_shacharit_2: "07:10",
     week_shacharit_3: "יום ו 08:15",
     week_mincha: week_mincha.format('HH:mm'),
@@ -105,30 +133,3 @@ exports.handler = async (event) => {
   const response = await lambda.invoke(timesGeneratorLambdaParams).promise();
   return JSON.parse(response.Payload);
 }
-
-
-// exports.handler();
-/*
-
-  (async () => {
-    let res = await axios.get("https://calendar.2net.co.il/todaytimes.aspx?city=%D7%9E%D7%91%D7%95%D7%90%20%D7%97%D7%95%D7%A8%D7%95%D7%9F&today=20230228");
- 
-    let page = res.data.split("\n");
-    let timeName='שקיעה מישורית';
-    let r = new RegExp(`${timeName}[^\\d]*(\\d\\d:\\d\\d)`)
-    let r2 = new RegExp("[^\\d]*(ֿ\\d\\d:\\d\\d)",'')
-    let r3 = /שקיעה מישורית[^\d]*(\d\d:\d\d)/
-    console.log("R")
-    console.log(r)
-    console.log(r2)
-    console.log(r3)
-    // console.log(res.data.match(l => l.match(/שקיעה מישורית[^\d]*..:../g)));
-    console.log(page.map(l => l.match(r)).filter(l => l).map(m => m[1]));
-    console.log(page.map(l => l.match(r2)).filter(l => l).map(m => m[1]));
-    console.log(page.map(l => l.match(/שקיעה מישורית[^\d]*(\d\d:\d\d)/)).filter(l => l).map(m => m[1]));
-    console.log(page.map(l => l.match(/[^\d]*(\d\d:\d\d)/)).filter(l => l).map(m => m[1]));
-    console.log(page.map(l => l.match(r3)).filter(l => l).map(m => m[1]));
-    // console.log(res.data)
-  }
-  )();
-  */
