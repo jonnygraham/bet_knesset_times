@@ -2,6 +2,7 @@ const Moment = require('moment');
 
 const AWS = require("aws-sdk");
 const lambda = new AWS.Lambda();
+export {}
 exports.handler = async (event) => {
 
   const calendar= {
@@ -104,3 +105,30 @@ exports.handler = async (event) => {
   const response = await lambda.invoke(timesGeneratorLambdaParams).promise();
   return JSON.parse(response.Payload);
 }
+
+
+// exports.handler();
+/*
+
+  (async () => {
+    let res = await axios.get("https://calendar.2net.co.il/todaytimes.aspx?city=%D7%9E%D7%91%D7%95%D7%90%20%D7%97%D7%95%D7%A8%D7%95%D7%9F&today=20230228");
+ 
+    let page = res.data.split("\n");
+    let timeName='שקיעה מישורית';
+    let r = new RegExp(`${timeName}[^\\d]*(\\d\\d:\\d\\d)`)
+    let r2 = new RegExp("[^\\d]*(ֿ\\d\\d:\\d\\d)",'')
+    let r3 = /שקיעה מישורית[^\d]*(\d\d:\d\d)/
+    console.log("R")
+    console.log(r)
+    console.log(r2)
+    console.log(r3)
+    // console.log(res.data.match(l => l.match(/שקיעה מישורית[^\d]*..:../g)));
+    console.log(page.map(l => l.match(r)).filter(l => l).map(m => m[1]));
+    console.log(page.map(l => l.match(r2)).filter(l => l).map(m => m[1]));
+    console.log(page.map(l => l.match(/שקיעה מישורית[^\d]*(\d\d:\d\d)/)).filter(l => l).map(m => m[1]));
+    console.log(page.map(l => l.match(/[^\d]*(\d\d:\d\d)/)).filter(l => l).map(m => m[1]));
+    console.log(page.map(l => l.match(r3)).filter(l => l).map(m => m[1]));
+    // console.log(res.data)
+  }
+  )();
+  */
