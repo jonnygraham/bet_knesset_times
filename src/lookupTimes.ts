@@ -20,9 +20,5 @@ async function fetchTime(date: typeof Moment, timeName: string): Promise<typeof 
     let r = new RegExp(`${timeName}[^\\d]*(\\d\\d:\\d\\d)`);
     console.log("Using regex "+r);
     return page.map((l: string) => l.match(r)).filter((l: RegExpMatchArray | null) => l)
-    .map((m: RegExpMatchArray | null) => {
-      console.log(m?[0]:null);
-      console.log(m?[1]:null);
-      console.log(m?[2]:null);
-      return Moment(m?[1]:null,"HH:mm"); } )[0];
+    .map((m: RegExpMatchArray | null) => Moment(m?m[1]:null,"HH:mm"))[0];
   }
