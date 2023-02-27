@@ -2,7 +2,6 @@ const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const AWS = require("aws-sdk");
 
-export {}
 exports.handler = async (event) => {
 
   const S3 = new AWS.S3();
