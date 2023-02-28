@@ -91,17 +91,17 @@ exports.handler = async (event) => {
   console.log(shkia2);
   const earliestShikia = shkia1.isBefore(shkia2) ? shkia1 : shkia2;
   console.log(earliestShikia);
-  const week_mincha = earliestShikia.clone().subtract(earliestShikia.get('minute')%5,'minute'); // Round down to 5 minutes
+  const week_mincha = earliestShikia.clone().subtract(13,'minute');
+  week_mincha.subtract(week_mincha.get('minute')%5,'minute'); // Round down to 5 minutes
 
   const tzet1 = await fetchTime(sunday,'צאת הכוכבים');
   const tzet2 = await fetchTime(thursday,'צאת הכוכבים');
   console.log(tzet1);
   console.log(tzet2);
   const latestTzet = tzet1.isAfter(tzet2) ? tzet1 : tzet2;
-  latestTzet.subtract(1,'minute');
-  const week_arvit_1 = latestTzet.clone();
+  const week_arvit_1 = latestTzet.clone().subtract(1,'minute');
   if (week_arvit_1.get('minute')%5 > 0) {
-    week_arvit_1.add(5-latestTzet.get('minute')%5,'minute'); // Round up to 5 minutes
+    week_arvit_1.add(5-week_arvit_1.get('minute')%5,'minute'); // Round up to 5 minutes
   }
   console.log(latestTzet);
   console.log(week_arvit_1);
