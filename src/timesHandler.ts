@@ -87,24 +87,26 @@ exports.handler = async (event) => {
   
   const shkia1 = await fetchTime(sunday, 'שקיעה מישורית');
   const shkia2 = await fetchTime(thursday, 'שקיעה מישורית');
-  console.log(shkia1);
-  console.log(shkia2);
+  console.log("Sunday shkia: "+shkia1);
+  console.log("Thursday shkia: "+shkia2);
   const earliestShikia = shkia1.isBefore(shkia2) ? shkia1 : shkia2;
-  console.log(earliestShikia);
+  console.log("Earliest shkia: "+earliestShikia);
   const week_mincha = earliestShikia.clone().subtract(13,'minute');
   week_mincha.subtract(week_mincha.get('minute')%5,'minute'); // Round down to 5 minutes
+  console.log("Weekday mincha: "+week_mincha);
 
   const tzet1 = await fetchTime(sunday,'צאת הכוכבים');
   const tzet2 = await fetchTime(thursday,'צאת הכוכבים');
-  console.log(tzet1);
-  console.log(tzet2);
+  console.log("Sunday tzet: "+tzet1);
+  console.log("Thursday tzet: "+tzet2);
   const latestTzet = tzet1.isAfter(tzet2) ? tzet1 : tzet2;
-  const week_arvit_1 = latestTzet.clone().subtract(1,'minute');
+  console.log("Latest tzet: "+latestTzet);
+  const week_arvit_1 = latestTzet.clone();
   if (week_arvit_1.get('minute')%5 > 0) {
     week_arvit_1.add(5-week_arvit_1.get('minute')%5,'minute'); // Round up to 5 minutes
   }
-  console.log(latestTzet);
-  console.log(week_arvit_1);
+
+  console.log("Weekday arvit: "+week_arvit_1);
 
 
   const calculatedParams = {
