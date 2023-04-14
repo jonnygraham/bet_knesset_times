@@ -76,7 +76,10 @@ exports.handler = async (event) => {
      day_mincha_1.add(30,'minute');
   }
   const day_mincha_1_shiur = day_mincha_1.clone().add(20,'minute');
-  const day_womens_shiur = day_shacharit.clone().add(2,'hour').add(10,'minute');
+  const day_womens_shiur = day_shacharit.clone().add(2,'hour');
+  if (params.dst !== "true") {
+      day_womens_shiur.add(10,'minute');
+  }
 
   const motzash_arvit = await fetchTime(shabbat, 'צאת השבת');
   
@@ -122,7 +125,7 @@ exports.handler = async (event) => {
     motzash_arvit: motzash_arvit.format('HH:mm'),
     week_shacharit_1: "יום א-ה 06:15",
     week_shacharit_2: "07:10",
-    week_shacharit_3: "יום ו 08:15",
+    week_shacharit_3: "יום ו 08:30",
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm'),
     week_arvit_2: "21:15"
