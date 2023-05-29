@@ -18,7 +18,6 @@ exports.handler = async (event) => {
   console.log(params); 
 
   doc.render(params);
-  //doc.render({erev_mincha:params.erev_mincha,day_shacharit:'08:00',day_mincha_gedola:'12:45',day_mincha_ketana:'17:10'});
   
   const buf = doc.getZip().generate({
      type: "nodebuffer",
