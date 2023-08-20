@@ -58,7 +58,7 @@ exports.handler = async (event) => {
   console.log("Calendar details for this date: "+calendar[shabbatDate]);
   const params = event.queryStringParameters ?? {};
 
-  const shkia = params.shkia ?? await fetchTime(shabbat, 'שקיעה מישורית'); //calendar[shabbatDate].shkia;
+  const shkia = params.shkia ?? (await fetchTime(shabbat, 'שקיעה מישורית')); //calendar[shabbatDate].shkia;
 
   const shkiaMoment = Moment(shkia,"HH:mm");
   const erev_mincha = shkiaMoment.clone().subtract(14,'minute');

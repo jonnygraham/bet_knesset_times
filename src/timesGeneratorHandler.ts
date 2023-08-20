@@ -6,8 +6,8 @@ const {
 
 exports.handler = async (event) => {
 
-  const S3 = new S3();
-  const content = await S3.getObject({Bucket: process.env.BUCKET,
+  const s3 = new S3();
+  const content = await s3.getObject({Bucket: process.env.BUCKET,
 			Key: 'templates/shabbat.docx'});
     
   const zip = new PizZip(content.Body);
