@@ -1,9 +1,7 @@
 const Moment = require('moment');
 
 import {fetchTime} from "./lookupTimes"
-
-const AWS = require("aws-sdk");
-const lambda = new AWS.Lambda();
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 exports.handler = async (event) => {
 
@@ -136,6 +134,9 @@ exports.handler = async (event) => {
     LogType: 'Tail',
     Payload: JSON.stringify({queryStringParameters: calculatedParams})
   };
-  const response = await lambda.invoke(timesGeneratorLambdaParams).promise();
+  const lambda = new LambdaClient({region:"us-east-1"});
+  const command = new InvokeCommand(timesGeneratorLambdaParams);
+  const response = await client.send(command);
   return JSON.parse(response.Payload);
 }
+
