@@ -137,6 +137,8 @@ exports.handler = async (event) => {
   const lambda = new LambdaClient({region:"us-east-1"});
   const command = new InvokeCommand(timesGeneratorLambdaParams);
   const response = await lambda.send(command);
+  console.log(response);
+  console.log(response.Payload);
   return JSON.parse(response.Payload);
 }
 
