@@ -1,12 +1,7 @@
 const Moment = require('moment');
 
 import {fetchTime} from "./lookupTimes"
-<<<<<<< HEAD
-import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
-=======
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
->>>>>>> 7d312d3 (Fix Doc Generator and add uploading lambda)
-
 exports.handler = async (event) => {
 
   const calendar= {
@@ -139,14 +134,6 @@ exports.handler = async (event) => {
     LogType: 'Tail',
     Payload: JSON.stringify({queryStringParameters: calculatedParams})
   };
-<<<<<<< HEAD
-  const lambda = new LambdaClient({region:"us-east-1"});
-  const command = new InvokeCommand(timesGeneratorLambdaParams);
-  const response = await lambda.send(command);
-  console.log(response);
-  console.log(response.Payload);
-  return JSON.parse(response.Payload);
-=======
   const lambda = new LambdaClient({ region: "us-east-1" });
   const command = new InvokeCommand(timesGeneratorLambdaParams);
   const { Payload } = await lambda.send(command);
@@ -160,6 +147,5 @@ exports.handler = async (event) => {
         body: "No payload returned from Lambda"
       }
   }
->>>>>>> 7d312d3 (Fix Doc Generator and add uploading lambda)
 }
 
