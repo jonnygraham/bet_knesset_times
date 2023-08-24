@@ -59,7 +59,7 @@ export class BetKnessetTimesStack extends Stack {
       }
     });
 
-    const timesUploaderHandlerLambdaUrl = docGenHandler.addFunctionUrl({
+    const timesUploaderHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
