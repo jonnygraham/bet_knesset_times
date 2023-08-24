@@ -1,16 +1,16 @@
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
-const {
-   S3
-} = require("@aws-sdk/client-s3");
+const { S3 } = require("@aws-sdk/client-s3");
 
 exports.handler = async (event) => {
 
   const s3 = new S3();
   const content = await s3.getObject({Bucket: process.env.BUCKET,
-			Key: 'templates/shabbat.docx'});
-    
-  const zip = new PizZip(content.Body);
+    Key: "templates/shabbat.docx"
+  });
+  const binaryData = await content.Body.transformToByteArray()
+  const zip = new PizZip(binaryData);
+
   const doc = new Docxtemplater(zip, {
      paragraphLoop: true,
      linebreaks: true,

@@ -48,8 +48,24 @@ export class BetKnessetTimesStack extends Stack {
 
     docGenHandler.grantInvoke(weeklyDocGenHandler);
  
+
+    const timesUploaderHandler = new lambda_nodejs.NodejsFunction(this, "TimesUploader", {
+      depsLockFilePath: './package-lock.json', 
+      entry: './src/timesFileGenerator.ts',
+      handler: "handler",
+      timeout: Duration.seconds(120),
+      environment: {
+        BUCKET: bucket.bucketName
+      }
+    });
+
+    const timesUploaderHandlerLambdaUrl = docGenHandler.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
     new CfnOutput(this, 'Doc Generator (TimesGenerator) URL ', { value: docGenLambdaUrl.url });
     new CfnOutput(this, 'Weekly Doc Generator (WeeklyTimesGenerator) URL ', { value: weeklyDocGenLambdaUrl.url });
+    new CfnOutput(this, 'Times Uploader URL ', { value: timesUploaderHandlerLambdaUrl.url });
 
   }
 }

@@ -1,7 +1,11 @@
 const Moment = require('moment');
 
 import {fetchTime} from "./lookupTimes"
+<<<<<<< HEAD
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+=======
+import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
+>>>>>>> 7d312d3 (Fix Doc Generator and add uploading lambda)
 
 exports.handler = async (event) => {
 
@@ -127,18 +131,35 @@ exports.handler = async (event) => {
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm'),
     week_arvit_2: "21:15"
-  } 
+  }
+
   const timesGeneratorLambdaParams = {
     FunctionName: process.env.DOC_GEN_LAMBDA_NAME,
     InvocationType: 'RequestResponse',
     LogType: 'Tail',
     Payload: JSON.stringify({queryStringParameters: calculatedParams})
   };
+<<<<<<< HEAD
   const lambda = new LambdaClient({region:"us-east-1"});
   const command = new InvokeCommand(timesGeneratorLambdaParams);
   const response = await lambda.send(command);
   console.log(response);
   console.log(response.Payload);
   return JSON.parse(response.Payload);
+=======
+  const lambda = new LambdaClient({ region: "us-east-1" });
+  const command = new InvokeCommand(timesGeneratorLambdaParams);
+  const { Payload } = await lambda.send(command);
+  if (Payload) {
+    const response = Buffer.from(Payload).toString();
+    console.log(response);
+    return JSON.parse(response);
+  } else {
+      return {
+        statusCode: 500,
+        body: "No payload returned from Lambda"
+      }
+  }
+>>>>>>> 7d312d3 (Fix Doc Generator and add uploading lambda)
 }
 
