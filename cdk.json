@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/bet_knesset_times.ts",
+  "app": "node dist/bin/bet_knesset_times.js",
   "watch": {
     "include": [
       "**"

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
+import sourceMapSupport from 'source-map-support'
+sourceMapSupport.install();
 import * as cdk from 'aws-cdk-lib';
-import { BetKnessetTimesStack } from '../lib/bet_knesset_times-stack';
+import { BetKnessetTimesStack } from '../lib/bet_knesset_times-stack.js';
 
 const app = new cdk.App();
 new BetKnessetTimesStack(app, 'BetKnessetTimesStack', {

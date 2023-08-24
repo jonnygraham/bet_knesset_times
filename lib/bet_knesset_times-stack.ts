@@ -4,6 +4,8 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambda_nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+
 export class BetKnessetTimesStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -17,8 +19,9 @@ export class BetKnessetTimesStack extends Stack {
     }); 
 
     const docGenHandler = new lambda_nodejs.NodejsFunction(this, "TimesGenerator", {
+      runtime: lambda.Runtime.NODEJS_18_X,
       depsLockFilePath: './package-lock.json', 
-      entry: './src/timesGeneratorHandler.ts',
+      entry: './dist/src/timesGeneratorHandler.js',
       handler: "handler",
       timeout: Duration.seconds(120),
       environment: {
@@ -33,8 +36,9 @@ export class BetKnessetTimesStack extends Stack {
     bucket.grantReadWrite(docGenHandler);
 
     const weeklyDocGenHandler = new lambda_nodejs.NodejsFunction(this, "WeeklyDocGenerator", {
+      runtime: lambda.Runtime.NODEJS_18_X,
       depsLockFilePath: './package-lock.json', 
-      entry: './src/timesHandler.ts',
+      entry: './dist/src/timesHandler.js',
       handler: "handler",
       timeout: Duration.seconds(180),
       environment: {
@@ -50,14 +54,18 @@ export class BetKnessetTimesStack extends Stack {
  
 
     const timesUploaderHandler = new lambda_nodejs.NodejsFunction(this, "TimesUploader", {
+      runtime: lambda.Runtime.NODEJS_18_X,
       depsLockFilePath: './package-lock.json', 
-      entry: './src/timesFileGenerator.ts',
+      entry: './dist/src/timesFileGenerator.js',
       handler: "handler",
       timeout: Duration.seconds(120),
       environment: {
         BUCKET: bucket.bucketName
       }
     });
+
+    const secret = secretsmanager.Secret.fromSecretNameV2(this, 'ImportedSecret', 'mygabay_creds');
+    secret.grantRead(timesUploaderHandler.role!);
 
     const timesUploaderHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,

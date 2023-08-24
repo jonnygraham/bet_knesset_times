@@ -2,12 +2,38 @@
 import { js2xml } from 'xml-js';
 import axios from 'axios';
 import * as FormData from 'form-data';
-import { Handler } from 'aws-cdk-lib/aws-lambda';
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
+
+const secret_name = "mygabay_creds";
 
 export const handler = async (event) => {
 
+  const client = new SecretsManagerClient({
+    region: "us-east-1",
+  });
+  
+  let response;
+  
+  try {
+    response = await client.send(
+      new GetSecretValueCommand({
+        SecretId: secret_name,
+        VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
+      })
+    );
+  } catch (error) {
+    // For a list of exceptions thrown, see
+    // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+    throw error;
+  }
+  
+  const creds = response.SecretString;
+
   const { upload, ...timesData } = event.queryStringParameters ?? {};
-  const cookies = await loginAndGetCookies();
+  const cookies = await loginAndGetCookies(creds);
 
   if (upload == "weekday") {
     console.log("Posting weekday times")
@@ -190,11 +216,11 @@ const YOUR_VIEWSTATE_VALUE = '/wEPDwULLTEyNTAzMjg2MzAPZBYCZg8PZBYCHgl0cmFuc2xhdG
 const YOUR_EVENTVALIDATION_VALUE = '/wEdAAx0GIg7r22Ct6Fmk/jVUxp9rUOKlhQRrZFLGCp1Xtoyr1YkZeYLD3HJRseNww6ZpSNxlGDu0g7mJF3T7XR7E/1/Ep5dN7Y1biponI12B7ZQnEr9UPCbY771rfPL+EBbcA+a6J8hr6/9FnGWzZ8P0XdIdOII/khqNjlP54CGNRMuquZgXYnl5NtKdi8u9Ihmm7jtxdiwPCuMOWUEW5gfiuccjtEePLKzG20Q6NPB/Wn3YRSUQ+SBa95NJENDZsYSHk4XwzJ0cuOuS5MSCFPe74Iz2v4PfwAbz69ijF18u8Ey9Q==';
 
 
-async function loginAndGetCookies(): Promise<string[]> {
+async function loginAndGetCookies(creds : { user: string, password : string }): Promise<string[]> {
   const loginUrl = 'https://mygabay.com/Login.aspx/LoginWithLicence';
   const payload = {
-    userName: "a6802@m.com",
-    password: "123456",
+    userName: creds.user,
+    password: creds.password,
     rememberMe: {
       "0": {},
       "length": 1
@@ -262,8 +288,8 @@ if (require.main === module) {
     }
 
     console.log("Posting Shabbat times")
-    handler({ queryStringParameters: { ...timesData, upload: "shabbat" } });
+    await handler({ queryStringParameters: { ...timesData, upload: "shabbat" } });
     console.log("Posting weekday times")
-    handler({ queryStringParameters: { ...timesData, upload: "weekday" } });
+    await handler({ queryStringParameters: { ...timesData, upload: "weekday" } });
   })();
 }
