@@ -6,6 +6,7 @@ import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
+import { calculateTimes } from "./timesHandler"
 
 const secret_name = "mygabay_creds";
 
@@ -32,9 +33,10 @@ export const handler = async (event) => {
   
   const creds = response.SecretString;
 
-  const { upload, ...timesData } = event.queryStringParameters ?? {};
+  const { upload, ...params } = event.queryStringParameters ?? {};
   const cookies = await loginAndGetCookies(creds);
 
+  const timesData = calculateTimes(params);
   if (upload == "weekday") {
     console.log("Posting weekday times")
     const weekdayXml = prepareWeekdayTimes(timesData)
