@@ -37,7 +37,8 @@ export const handler = async (event) => {
   const { upload, ...params } = event.queryStringParameters ?? {};
   const cookies = await loginAndGetCookies(creds);
 
-  const timesData = calculateTimes(params);
+  const timesData = await calculateTimes(params);
+  console.log(timesData);
   if (upload == "weekday") {
     console.log("Posting weekday times")
     const weekdayXml = prepareWeekdayTimes(timesData)
