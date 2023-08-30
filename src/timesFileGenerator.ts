@@ -6,7 +6,7 @@ import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
-import { calculateTimes } from "./timesHandler"
+import { calculateTimes } from "./lookupTimes"
 
 const secret_name = "mygabay_creds";
 
