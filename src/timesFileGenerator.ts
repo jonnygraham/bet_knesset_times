@@ -1,7 +1,7 @@
 
 import { js2xml } from 'xml-js';
 import axios from 'axios';
-import * as FormData from 'form-data';
+import FormData from 'form-data';
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
@@ -31,7 +31,8 @@ export const handler = async (event) => {
     throw error;
   }
   
-  const creds = response.SecretString;
+  const creds = JSON.parse(response.SecretString);
+  
 
   const { upload, ...params } = event.queryStringParameters ?? {};
   const cookies = await loginAndGetCookies(creds);
@@ -221,8 +222,7 @@ const YOUR_EVENTVALIDATION_VALUE = '/wEdAAx0GIg7r22Ct6Fmk/jVUxp9rUOKlhQRrZFLGCp1
 async function loginAndGetCookies(creds : { user: string, password : string }): Promise<string[]> {
   const loginUrl = 'https://mygabay.com/Login.aspx/LoginWithLicence';
   const payload = {
-    userName: creds.user,
-    password: creds.password,
+    ...creds,
     rememberMe: {
       "0": {},
       "length": 1

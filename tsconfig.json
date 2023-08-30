@@ -24,6 +24,7 @@
     ],
     "moduleResolution": "node",
     "outDir": "./dist",
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
     "node_modules",
