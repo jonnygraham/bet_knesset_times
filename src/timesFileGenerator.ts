@@ -158,7 +158,7 @@ function prepareShabbatTimes(times: any) {
   data.push({
     text: 'מנחה גדולה ערב שבת (' + times.parsha + ')',
     time: "14:30",
-    active: false
+    active: true
   })
   data.push({
     text: 'מנחה וערבית ערב שבת',
