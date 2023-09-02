@@ -82,7 +82,9 @@ export async function calculateTimes(params: any): Promise<any> {
     "2023-09-02": { parsha: "כי תבוא" }
   };
 
-  const shabbat = Moment().add(6 - Moment().day(), 'day');
+  const daysUntilSaturday = (6 - (Moment().day() + 1) % 7) % 7 + 1;
+//  const shabbat = Moment().add(6 - Moment().day(), 'day');
+  const shabbat = Moment().add(daysUntilSaturday, 'day');
   const shabbatDate = shabbat.format("YYYY-MM-DD");
   console.log("Shabbat date is " + shabbatDate);
   console.log("Calendar details for this date: " + calendar[shabbatDate]);
