@@ -43,12 +43,12 @@ export const handler = async (event) => {
     console.log("Posting weekday times")
     const weekdayXml = prepareWeekdayTimes(timesData)
     console.log(weekdayXml)
-    await postXMLFile(cookies, weekdayXml, 'tfilot.xml');
+    await postXMLFile(cookies, weekdayXml, params.filename ?? 'tfilot.xml');
   } else {
     console.log("Posting Shabbat times")
     const shabbatXml = prepareShabbatTimes(timesData)
     console.log(shabbatXml);
-    await postXMLFile(cookies, shabbatXml, 'tfilotSH.xml');
+    await postXMLFile(cookies, shabbatXml, params.filename ?? 'tfilotSH.xml');
   }
   console.log("Posted times successfully")
 
