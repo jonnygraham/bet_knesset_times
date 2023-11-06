@@ -220,7 +220,7 @@ const YOUR_VIEWSTATE_VALUE = '/wEPDwULLTEyNTAzMjg2MzAPZBYCZg8PZBYCHgl0cmFuc2xhdG
 const YOUR_EVENTVALIDATION_VALUE = '/wEdAAx0GIg7r22Ct6Fmk/jVUxp9rUOKlhQRrZFLGCp1Xtoyr1YkZeYLD3HJRseNww6ZpSNxlGDu0g7mJF3T7XR7E/1/Ep5dN7Y1biponI12B7ZQnEr9UPCbY771rfPL+EBbcA+a6J8hr6/9FnGWzZ8P0XdIdOII/khqNjlP54CGNRMuquZgXYnl5NtKdi8u9Ihmm7jtxdiwPCuMOWUEW5gfiuccjtEePLKzG20Q6NPB/Wn3YRSUQ+SBa95NJENDZsYSHk4XwzJ0cuOuS5MSCFPe74Iz2v4PfwAbz69ijF18u8Ey9Q==';
 
 
-async function loginAndGetCookies(creds : { user: string, password : string }): Promise<string[]> {
+async function loginAndGetCookies(creds : { userName: string, password : string }): Promise<string[]> {
   const loginUrl = 'https://mygabay.com/Login.aspx/LoginWithLicence';
   const payload = {
     ...creds,
