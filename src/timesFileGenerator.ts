@@ -227,7 +227,9 @@ async function loginAndGetCookies(creds : { userName: string, password : string 
     rememberMe: {
       "0": {},
       "length": 1
-    }
+    },
+    questionId: "",
+    answer: ""
   };
 
   const response = await axios.post(loginUrl, payload, {
