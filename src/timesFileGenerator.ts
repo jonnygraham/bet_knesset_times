@@ -213,7 +213,7 @@ async function getParamValue(client : SSMClient, name : string, encrypted : bool
         Name: param_creds,
         WithDecryption: encrypted
       })
-    ).then(response => response.Parameter.Value);
+    ).then(response => response!.Parameter!.Value!);
 }
 
 async function loginAndGetCookies(creds : { userName: string, password : string }): Promise<string[]> {
