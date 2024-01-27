@@ -3,36 +3,28 @@ import { js2xml } from 'xml-js';
 import axios from 'axios';
 import FormData from 'form-data';
 import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager";
+  SSMClient,
+  GetParameterCommand,
+} from "@aws-sdk/client-ssm";
 import { calculateTimes } from "./lookupTimes"
+import { TcpRetryEvent } from 'aws-cdk-lib/aws-appmesh';
 
-const secret_name = "mygabay_creds";
+const param_creds = "mygabay_creds";
+const param_eventValidation = "mygabay_eventValidation";
+const param_viewstate_part1 = "mygabay_viewstate_part1";
+const param_viewstate_part2 = "mygabay_viewstate_part2";
 
 export const handler = async (event) => {
-
-  const client = new SecretsManagerClient({
+  const ssmClient = new SSMClient({
     region: "us-east-1",
   });
   
-  let response;
-  
-  try {
-    response = await client.send(
-      new GetSecretValueCommand({
-        SecretId: secret_name,
-        VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
-      })
-    );
-  } catch (error) {
-    // For a list of exceptions thrown, see
-    // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-    throw error;
-  }
-  
-  const creds = JSON.parse(response.SecretString);
-  
+  const [creds, viewState1, viewState2, eventValidationValue] = await Promise.all([
+      getParamValue(ssmClient, param_creds, true).then(value => JSON.parse(value)),
+      getParamValue(ssmClient, param_viewstate_part1, false),
+      getParamValue(ssmClient, param_viewstate_part2, false),
+      getParamValue(ssmClient, param_eventValidation, false)]);
+  const viewStateValue = viewState1+viewState2; // Too large for a single parameter
 
   const { upload, ...params } = event.queryStringParameters ?? {};
   const cookies = await loginAndGetCookies(creds);
@@ -43,12 +35,12 @@ export const handler = async (event) => {
     console.log("Posting weekday times")
     const weekdayXml = prepareWeekdayTimes(timesData)
     console.log(weekdayXml)
-    await postXMLFile(cookies, weekdayXml, params.filename ?? 'tfilot.xml');
+    await postXMLFile(cookies, weekdayXml, params.filename ?? 'tfilot.xml', viewStateValue, eventValidationValue);
   } else {
     console.log("Posting Shabbat times")
     const shabbatXml = prepareShabbatTimes(timesData)
     console.log(shabbatXml);
-    await postXMLFile(cookies, shabbatXml, params.filename ?? 'tfilotSH.xml');
+    await postXMLFile(cookies, shabbatXml, params.filename ?? 'tfilotSH.xml', viewStateValue, eventValidationValue);
   }
   console.log("Posted times successfully")
 
@@ -192,7 +184,7 @@ function prepareShabbatTimes(times: any) {
     active: true
   })
   data.push({
-    text: 'שיעור הרב קטן',
+    text: 'שיעור הרב פרל',
     time: times.day_mincha_1_shiur,
     active: true
   })
@@ -215,10 +207,14 @@ function prepareShabbatTimes(times: any) {
   return convertToXML(data);
 }
 
-
-const YOUR_VIEWSTATE_VALUE = '/wEPDwULLTEyNTAzMjg2MzAPZBYCZg8PZBYCHgl0cmFuc2xhdGUFAm5vFgICAQ8WBB4FY2xhc3MFAmhlHwAFAm5vFgQCAQ8WAh8ABQJubxYIZg8WAh8ABQJub2QCAQ8WAh8ABQJub2QCAg8WBB4EaHJlZgUQL1N0eWxlL3J0bC5jc3M/Mx8ABQJub2QCAw8WAh8ABQJub2QCAw8WBB8ABQJubx4HZW5jdHlwZQUTbXVsdGlwYXJ0L2Zvcm0tZGF0YRYyAgEPDxYGHghJbWFnZVVybGUeDUFsdGVybmF0ZVRleHRlHgdUb29sVGlwZRYCHwAFAm5vZAIDDxYCHgRUZXh0BSHXkdeZ16og15TXm9eg16HXqiDXntep15vXnyDXnNeV15lkAgUPFgIfB2VkAgcPDxYCHgdWaXNpYmxlaBYCHwAFAm5vZAIJDw8WBB8GBS3Xmdeq16jXqiDXlNeV15PXoteV16og15XXldem15DXpCDXnNep15zXmdeX15QfBwUBMBYCHwAFAm5vZAILDw8WBB8FZR8GZRYCHwAFAm5vZAINDw8WBB8GBSTXmdeq16jXqiDXnteh16jXldeg15nXnSDXnNep15zXmdeX15QfBwUBMBYCHwAFAm5vZAIPDw8WBB8FZR8GZRYCHwAFAm5vZAIRDw8WBB8GBS/Xmdeq16jXqiDXlNeV15PXoteV16og16fXldec15nXldeqINec16nXnNeZ15fXlB8HBQEwFgIfAAUCbm9kAhMPDxYEHwVlHwZlFgIfAAUCbm9kAhUPDxYEHwYFIten15HXnNeV16og16nXlNeV16DXpNen15Ug15TXqdeg15QfBwUBMBYCHwAFAm5vZAIXDw8WBB8FZR8GZRYCHwAFAm5vZAIZDw8WBB8GBRfXqNeb15nXqdeqINeU15XXk9ei15XXqh8HZRYCHwAFAm5vZAIbDxYEHwAFAm5vHwhoZAIdDw9kFgIfAAUCbm9kAh8PFgIfBwUMINeb15kg16rXpteQZAIhDw9kFgIfAAUCbm9kAiMPFgIfBwUFMTg6NTNkAiUPD2QWAh8ABQJub2QCJw8WAh8HBQUxOTo1MWQCKQ8PZBYCHwAFAm5vZAIqDw8WBB8HBQEhHwYFFden16jXmdeQ16og16nXmdeo15XXqhYCHwAFAm5vZAIsDw9kFgIfAAUCbm8WJAIBDxYEHwAFAm5vHgV0aXRsZWQWAmYPD2QWAh8ABQJub2QCAw8WAh8ABQJubxYGZg8PZBYCHwAFAm5vZAICDxYCHwAFAm5vFhJmDw9kFgIfAAUCbm9kAgIPFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCBA8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIGDxYGHwAFAm5vHwlkHwhoFgJmDw9kFgIfAAUCbm9kAggPFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCCg8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIMDxYGHwAFAm5vHwlkHwhoFgJmDw9kFgIfAAUCbm9kAg4PFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCEA8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIEDxYCHwAFAm5vFh5mDw9kFgIfAAUCbm9kAgIPFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCBA8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIGDxYGHwAFAm5vHwlkHwhoFgJmDw9kFgIfAAUCbm9kAggPFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCCg8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIMDxYEHwAFAm5vHwlkFgJmDw9kFgIfAAUCbm9kAg4PFgQfAAUCbm8fCWQWAmYPD2QWAh8ABQJub2QCEA8WBB8ABQJubx8JZBYCZg8PZBYCHwAFAm5vZAISDxYEHwAFAm5vHwlkFgJmDw9kFgIfAAUCbm9kAhQPFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCFg8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIYDxYGHwAFAm5vHwlkHwhoFgJmDw9kFgIfAAUCbm9kAhoPFgYfAAUCbm8fCWQfCGgWAmYPD2QWAh8ABQJub2QCHA8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIFDxYEHwAFAm5vHwlkFgJmDw9kFgIfAAUCbm9kAgcPFgIfAAUCbm8WDGYPD2QWAh8ABQJub2QCAg8WBh8ABQJubx8JZB8IaBYCZg8PZBYCHwAFAm5vZAIEDxYEHwAFAm5v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';
-const YOUR_EVENTVALIDATION_VALUE = '/wEdAAx0GIg7r22Ct6Fmk/jVUxp9rUOKlhQRrZFLGCp1Xtoyr1YkZeYLD3HJRseNww6ZpSNxlGDu0g7mJF3T7XR7E/1/Ep5dN7Y1biponI12B7ZQnEr9UPCbY771rfPL+EBbcA+a6J8hr6/9FnGWzZ8P0XdIdOII/khqNjlP54CGNRMuquZgXYnl5NtKdi8u9Ihmm7jtxdiwPCuMOWUEW5gfiuccjtEePLKzG20Q6NPB/Wn3YRSUQ+SBa95NJENDZsYSHk4XwzJ0cuOuS5MSCFPe74Iz2v4PfwAbz69ijF18u8Ey9Q==';
-
+async function getParamValue(client : SSMClient, name : string, encrypted : boolean) : Promise<string> {
+  return client.send(
+      new GetParameterCommand({
+        Name: param_creds,
+        WithDecryption: encrypted
+      })
+    ).then(response => response.Parameter.Value);
+}
 
 async function loginAndGetCookies(creds : { userName: string, password : string }): Promise<string[]> {
   const loginUrl = 'https://mygabay.com/Login.aspx/LoginWithLicence';
@@ -243,18 +239,18 @@ async function loginAndGetCookies(creds : { userName: string, password : string 
   return requiredCookies;
 }
 
-async function postXMLFile(cookies: string[], xmlString: string, filename: string) {
+async function postXMLFile(cookies: string[], xmlString: string, filename: string, viewStateValue : string, eventValidationValue : string) {
   // const postUrl = 'https://mygabay.com/ImportTimes.aspx?type=tfilothol';
   const postUrl = 'https://mygabay.com/ImportTimes.aspx';
   const form = new FormData();
   form.append('__EVENTTARGET', '');
   form.append('__EVENTARGUMENT', '');
   form.append('__LASTFOCUS', '');
-  form.append('__VIEWSTATE', YOUR_VIEWSTATE_VALUE);
+  form.append('__VIEWSTATE', viewStateValue);
   form.append('__VIEWSTATEGENERATOR', 'FE2D4F58');
   form.append('__SCROLLPOSITIONX', '0');
   form.append('__SCROLLPOSITIONY', '0');
-  form.append('__EVENTVALIDATION', YOUR_EVENTVALIDATION_VALUE);
+  form.append('__EVENTVALIDATION', eventValidationValue);
   form.append('ctl00$language', 'he');
   form.append('ctl00$ContentPlaceHolder1$HiddenField2', '');
   form.append('ctl00$ContentPlaceHolder1$sendButton', 'שלח');

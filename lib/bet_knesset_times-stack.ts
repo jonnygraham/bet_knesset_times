@@ -4,7 +4,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambda_nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 
 export class BetKnessetTimesStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -64,8 +64,11 @@ export class BetKnessetTimesStack extends Stack {
       }
     });
 
-    const secret = secretsmanager.Secret.fromSecretNameV2(this, 'ImportedSecret', 'mygabay_creds');
-    secret.grantRead(timesUploaderHandler.role!);
+    ['mygabay_creds','mygabay_eventValidation','mygabay_viewstate_part1','mygabay_viewstate_part2'].forEach(paramName => {
+        const param = ssm.StringParameter.fromStringParameterAttributes(this, `Parameter${paramName}`, {
+          parameterName: paramName});
+        param.grantRead(timesUploaderHandler.role!);
+      });
 
     const timesUploaderHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
