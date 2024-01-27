@@ -64,7 +64,10 @@ export class BetKnessetTimesStack extends Stack {
       }
     });
 
-    ['mygabay_creds','mygabay_eventValidation','mygabay_viewstate_part1','mygabay_viewstate_part2'].forEach(paramName => {
+    const param = ssm.StringParameter.fromSecureStringParameterAttributes(this, `ParameterCreds`, {
+      parameterName: 'mygabay_creds'});
+    param.grantRead(timesUploaderHandler.role!);
+    ['mygabay_eventValidation','mygabay_viewstate_part1','mygabay_viewstate_part2'].forEach(paramName => {
         const param = ssm.StringParameter.fromStringParameterAttributes(this, `Parameter${paramName}`, {
           parameterName: paramName});
         param.grantRead(timesUploaderHandler.role!);
