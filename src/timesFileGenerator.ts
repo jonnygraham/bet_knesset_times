@@ -31,25 +31,26 @@ export const handler = async (event) => {
 
   const timesData = await calculateTimes(params);
   console.log(timesData);
+  let redirectUrl = 'https://mygabay.com';
   if (upload == "weekday") {
     console.log("Posting weekday times")
     const weekdayXml = prepareWeekdayTimes(timesData)
     console.log(weekdayXml)
     await postXMLFile(cookies, weekdayXml, params.filename ?? 'tfilot.xml', viewStateValue, eventValidationValue);
+    redirectUrl = 'https://mygabay.com/TfilaTimes/ShabatTimes.aspx';
   } else {
     console.log("Posting Shabbat times")
     const shabbatXml = prepareShabbatTimes(timesData)
     console.log(shabbatXml);
     await postXMLFile(cookies, shabbatXml, params.filename ?? 'tfilotSH.xml', viewStateValue, eventValidationValue);
+    redirectUrl = 'https://mygabay.com/TfilaTimes/HolTimes.aspx';
   }
   console.log("Posted times successfully")
-
-  const redirectURL = 'https://mygabay.com/TfilaTimes/ShabatTimes.aspx';
 
   return {
     statusCode: 302,
     headers: {
-      'Location': redirectURL
+      'Location': redirectUrl
     },
     body: null
   };
@@ -210,7 +211,7 @@ function prepareShabbatTimes(times: any) {
 async function getParamValue(client : SSMClient, name : string, encrypted : boolean) : Promise<string> {
   return client.send(
       new GetParameterCommand({
-        Name: param_creds,
+        Name: name,
         WithDecryption: encrypted
       })
     ).then(response => response!.Parameter!.Value!);
