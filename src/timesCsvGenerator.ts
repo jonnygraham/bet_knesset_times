@@ -26,13 +26,14 @@ export const handler = async (event) => {
 
     console.log(csv);
 
-    const base64CSV = Buffer.from(csv).toString('base64');
+    const csvWithBOM = `\ufeff${csv}`;
+    const base64CSV = Buffer.from(csvWithBOM).toString('base64');
     var response = {
         statusCode: 200,
         headers: {
             'Access-Control-Allow-Origin': "*",
             'Access-Control-Allow-Methods': 'GET, POST',
-            'Content-type' : 'text/csv',
+            'Content-type' : 'text/csv; charset=utf-8',
             'Content-Disposition': 'attachment; filename="shabbat_times.csv'
         },
         isBase64Encoded: true,
