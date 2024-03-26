@@ -88,7 +88,7 @@ export class BetKnessetTimesStack extends Stack {
       }
     });
 
-    const timesCsvHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({
+    const timesCsvHandlerLambdaUrl = timesCsvHandler.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
