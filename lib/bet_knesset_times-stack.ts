@@ -82,7 +82,10 @@ export class BetKnessetTimesStack extends Stack {
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesCsvGenerator.js',
       handler: "handler",
-      timeout: Duration.seconds(360)
+      timeout: Duration.seconds(360),
+      environment: {
+        BUCKET: bucket.bucketName
+      }
     });
 
     const timesCsvHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({

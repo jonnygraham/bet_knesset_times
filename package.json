@@ -26,6 +26,7 @@
     "@aws-sdk/client-ssm": "^3.398.0",
     "@types/axios": "^0.14.0",
     "aws-cdk-lib": "^2.92.0",
+    "aws-sdk": "^2.1586.0",
     "axios": "^1.4.0",
     "constructs": "^10.0.0",
     "docxtemplater": "^3.31.5",
