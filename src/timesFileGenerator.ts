@@ -76,7 +76,6 @@ function convertToXML(data: TimeRow[]) {
   return js2xml(jsonData, { compact: true, ignoreComment: true, spaces: 0 });
 }
 
-
 const range = (start, end, length = end - start + 1) =>
   Array.from({ length }, (_, i) => start + i)
 

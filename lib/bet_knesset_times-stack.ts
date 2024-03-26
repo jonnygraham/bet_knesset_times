@@ -77,9 +77,22 @@ export class BetKnessetTimesStack extends Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
+    const timesCsvHandler = new lambda_nodejs.NodejsFunction(this, "TimesCsv", {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      depsLockFilePath: './package-lock.json', 
+      entry: './dist/src/timesCsvGenerator.js',
+      handler: "handler",
+      timeout: Duration.seconds(360)
+    });
+
+    const timesCsvHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
     new CfnOutput(this, 'Doc Generator (TimesGenerator) URL ', { value: docGenLambdaUrl.url });
     new CfnOutput(this, 'Weekly Doc Generator (WeeklyTimesGenerator) URL ', { value: weeklyDocGenLambdaUrl.url });
     new CfnOutput(this, 'Times Uploader URL ', { value: timesUploaderHandlerLambdaUrl.url });
+    new CfnOutput(this, 'Times CSV URL ', { value: timesCsvHandlerLambdaUrl.url });
 
   }
 }
