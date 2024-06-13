@@ -5,6 +5,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambda_nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 export class BetKnessetTimesStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -92,6 +94,23 @@ export class BetKnessetTimesStack extends Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
+    const isDst = 'true';
+    // Rule for Thursday at 19:00 UTC to update weekday times for next week
+    const thursdayRule = new events.Rule(this, 'ThursdayScheduleRule', {
+      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: '4' }),
+    });
+    thursdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
+      event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'weekday' } }),
+    }));
+
+    // Rule for Saturday at 19:00 UTC to update shabbat times for next week
+    const saturdayRule = new events.Rule(this, 'SaturdayScheduleRule', {
+      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: '6' }),
+    });
+    saturdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
+      event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'shabbat' } }),
+    }));
+    
     new CfnOutput(this, 'Doc Generator (TimesGenerator) URL ', { value: docGenLambdaUrl.url });
     new CfnOutput(this, 'Weekly Doc Generator (WeeklyTimesGenerator) URL ', { value: weeklyDocGenLambdaUrl.url });
     new CfnOutput(this, 'Times Uploader URL ', { value: timesUploaderHandlerLambdaUrl.url });
