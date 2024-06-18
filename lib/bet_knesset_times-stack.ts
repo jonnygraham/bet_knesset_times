@@ -97,7 +97,7 @@ export class BetKnessetTimesStack extends Stack {
     const isDst = 'true';
     // Rule for Thursday at 19:00 UTC to update weekday times for next week
     const thursdayRule = new events.Rule(this, 'ThursdayScheduleRule', {
-      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: '4' }),
+      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: 'THU' }),
     });
     thursdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
       event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'weekday' } }),
@@ -105,7 +105,7 @@ export class BetKnessetTimesStack extends Stack {
 
     // Rule for Saturday at 19:00 UTC to update shabbat times for next week
     const saturdayRule = new events.Rule(this, 'SaturdayScheduleRule', {
-      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: '6' }),
+      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: 'SAT' }),
     });
     saturdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
       event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'shabbat' } }),
