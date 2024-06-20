@@ -95,9 +95,9 @@ export class BetKnessetTimesStack extends Stack {
     });
 
     const isDst = 'true';
-    // Rule for Thursday at 19:00 UTC to update weekday times for next week
+    // Rule for Thursday at 18:00 UTC to update weekday times for next week
     const thursdayRule = new events.Rule(this, 'ThursdayScheduleRule', {
-      schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: 'THU' }),
+      schedule: events.Schedule.cron({ minute: '0', hour: '18', weekDay: 'THU' }),
     });
     thursdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
       event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'weekday' } }),
