@@ -132,7 +132,7 @@ function prepareWeekdayTimes(times: any) {
   data.push({
     text: 'ערבית',
     time: times.week_arvit_2,
-    active: true
+    active: false
   })
   data.push({
     text: 'שיעור דף יומי הרב ברוכים',
