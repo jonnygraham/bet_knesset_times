@@ -21,7 +21,7 @@ export class BetKnessetTimesStack extends Stack {
     }); 
 
     const docGenHandler = new lambda_nodejs.NodejsFunction(this, "TimesGenerator", {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesGeneratorHandler.js',
       handler: "handler",
