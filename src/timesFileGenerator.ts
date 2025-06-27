@@ -259,13 +259,14 @@ async function postXMLFile(cookies: string[], xmlString: string, filename: strin
     contentType: 'text/xml'
   });
 
-const res = await axios.post(postUrl, form, {
-  headers: {
-    ...form.getHeaders(),
-    Cookie: cookies.join('; ')
-  }
-});
-console.log(res.status, res.data);
+  const res = await axios.post(postUrl, form, {
+    headers: {
+      ...form.getHeaders(),
+      Cookie: cookies.join('; ')
+    }
+  });
+  console.log(res.status, res.data);
+}
 
 if (require.main === module) {
   console.log("Running locally");
