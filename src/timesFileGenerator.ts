@@ -262,7 +262,13 @@ async function postXMLFile(cookies: string[], xmlString: string, filename: strin
   const res = await axios.post(postUrl, form, {
     headers: {
       ...form.getHeaders(),
-      Cookie: cookies.join('; ')
+      Cookie: cookies.join('; '),
+      Origin: 'https://mygabay.com',
+      Referer: 'https://mygabay.com/ImportTimes.aspx',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Upgrade-Insecure-Requests': '1'
     }
   });
   console.log(res.status, res.data);
