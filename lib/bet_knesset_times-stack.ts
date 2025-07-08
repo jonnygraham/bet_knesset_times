@@ -62,10 +62,25 @@ export class BetKnessetTimesStack extends Stack {
       handler: "handler",
       timeout: Duration.seconds(120),
       memorySize: 1024, // Minimum for Chromium
-      bundling: {
-        externalModules: [], // no external
-        nodeModules: ['chrome-aws-lambda', 'puppeteer-core'], // ✅ include both
-      },
+bundling: {
+  nodeModules: ['chrome-aws-lambda', 'puppeteer-core'],
+  externalModules: [],
+  commandHooks: {
+    beforeBundling(inputDir, outputDir) {
+      return [
+        // Copy Chromium binaries from node_modules into output bundle
+        `cp -r ${inputDir}/node_modules/chrome-aws-lambda/bin ${outputDir}/node_modules/chrome-aws-lambda/`,
+        `cp -r ${inputDir}/node_modules/chrome-aws-lambda/lib ${outputDir}/node_modules/chrome-aws-lambda/`
+      ];
+    },
+    afterBundling() {
+      return [];
+    },
+    beforeInstall() {
+      return [];
+    },
+  },
+},
       environment: {
         BUCKET: bucket.bucketName
       }
