@@ -63,8 +63,8 @@ export class BetKnessetTimesStack extends Stack {
       timeout: Duration.seconds(120),
       memorySize: 1024, // Minimum for Chromium
       bundling: {
-        externalModules: ['chrome-aws-lambda'], // Do NOT bundle chromium
-        nodeModules: ['puppeteer-core'],        // Bundle puppeteer-core
+        externalModules: [], // no external
+        nodeModules: ['chrome-aws-lambda', 'puppeteer-core'], // ✅ include both
       },
       environment: {
         BUCKET: bucket.bucketName
