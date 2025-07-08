@@ -45,8 +45,8 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   const filePath = `/tmp/${filename}`;
   await fs.writeFile(filePath, xmlString);
 
-  const executablePath = await chromium.executablePath;
-  console.log("Using Chromium executable at:", executablePath);
+  const executablePath1 = await chromium.executablePath;
+  console.log("Using Chromium executable at:", executablePath1);
 
 const executablePath = await chromium.executablePath || '/usr/bin/chromium-browser'; // fallback
 
