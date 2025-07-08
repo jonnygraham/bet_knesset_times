@@ -61,6 +61,11 @@ export class BetKnessetTimesStack extends Stack {
       entry: './dist/src/timesFileGenerator.js',
       handler: "handler",
       timeout: Duration.seconds(120),
+      memorySize: 1024, // Minimum for Chromium
+      bundling: {
+        externalModules: ['chrome-aws-lambda'], // Do NOT bundle chromium
+        nodeModules: ['puppeteer-core'],        // Bundle puppeteer-core
+      },
       environment: {
         BUCKET: bucket.bucketName
       }

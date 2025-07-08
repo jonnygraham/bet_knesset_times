@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "engines": {
-     "node": ">=22"
+    "node": ">=22"
   },
   "bin": {
     "bet_knesset_times": "bin/bet_knesset_times.js"
@@ -31,10 +31,12 @@
     "aws-cdk-lib": "^2.168.0",
     "aws-sdk": "^2.1586.0",
     "axios": "^1.4.0",
+    "chrome-aws-lambda": "^10.1.0",
     "constructs": "^10.0.0",
     "docxtemplater": "^3.31.5",
     "moment": "^2.29.4",
     "pizzip": "^3.1.3",
+    "puppeteer-core": "^24.12.0",
     "source-map-support": "^0.5.16",
     "xml-js": "^1.6.11"
   }
