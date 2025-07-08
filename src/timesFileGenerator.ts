@@ -57,7 +57,10 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   await page.type('#userName', creds.userName);
   await page.type('#password', creds.password);
 
-  await page.evaluate(() => login());
+  await page.evaluate(() => {
+    (window as any).login();
+  });
+
   await page.waitForNavigation({ waitUntil: 'networkidle2' });
   await page.goto('https://mygabay.com/ImportTimes.aspx', { waitUntil: 'networkidle2' });
 
