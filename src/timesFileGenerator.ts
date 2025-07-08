@@ -58,6 +58,7 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   await page.type('#password', creds.password);
 
   await page.evaluate(() => {
+    // @ts-ignore
     (window as any).login();
   });
 
