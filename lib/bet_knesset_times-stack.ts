@@ -68,6 +68,7 @@ bundling: {
   commandHooks: {
     beforeBundling(inputDir, outputDir) {
       return [
+        `mkdir -p ${outputDir}/node_modules/chrome-aws-lambda/`,
         // Copy Chromium binaries from node_modules into output bundle
         `cp -r ${inputDir}/node_modules/chrome-aws-lambda/bin ${outputDir}/node_modules/chrome-aws-lambda/`,
         `cp -r ${inputDir}/node_modules/chrome-aws-lambda/lib ${outputDir}/node_modules/chrome-aws-lambda/`
