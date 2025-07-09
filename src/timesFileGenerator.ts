@@ -45,7 +45,7 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   const filePath = `/tmp/${filename}`;
   await fs.writeFile(filePath, xmlString);
 
-  console.log("Chromium executable path:"+await chromium.executablePath());
+  console.log("Chromium executable path:"+await chromium.executablePath("https://github.com/Sparticuz/chromium/releases/download/v137.0.1/chromium-v137.0.1-pack.x64.tar"));
 
   const viewport = {
     deviceScaleFactor: 1,
