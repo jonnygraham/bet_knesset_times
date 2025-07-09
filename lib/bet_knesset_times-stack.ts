@@ -59,7 +59,7 @@ export class BetKnessetTimesStack extends Stack {
     );
 
     const timesUploaderHandler = new lambda_nodejs.NodejsFunction(this, "TimesUploader", {
-      runtime: lambda.Runtime.NODEJS_22_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesFileGenerator.js',
       handler: "handler",
