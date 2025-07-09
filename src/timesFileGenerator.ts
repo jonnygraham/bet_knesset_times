@@ -4,6 +4,7 @@ import { js2xml } from 'xml-js';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { calculateTimes } from './lookupTimes.js';
 import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -44,16 +45,13 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   const filePath = `/tmp/${filename}`;
   await fs.writeFile(filePath, xmlString);
 
-const browser = await puppeteer.launch({
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--single-process',
-    '--no-zygote'
-  ],
-  executablePath: '/opt/chromium',  // 👈 comes from the Lambda Layer
-  headless: true,
-});
+  console.log("Chromium executable path:"+await chromium.executablePath());
+  const browser = await puppeteer.launch({
+    args: puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
+    defaultViewport: viewport,
+    executablePath: await chromium.executablePath(),
+    headless: true
+  });
 
   const page = await browser.newPage();
   await page.goto('https://mygabay.com/Login.aspx', { waitUntil: 'domcontentloaded' });
