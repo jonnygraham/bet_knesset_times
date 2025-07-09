@@ -46,6 +46,16 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   await fs.writeFile(filePath, xmlString);
 
   console.log("Chromium executable path:"+await chromium.executablePath());
+
+  const viewport = {
+    deviceScaleFactor: 1,
+    hasTouch: false,
+    height: 1080,
+    isLandscape: true,
+    isMobile: false,
+    width: 1920,
+  };
+
   const browser = await puppeteer.launch({
     args: puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
     defaultViewport: viewport,
