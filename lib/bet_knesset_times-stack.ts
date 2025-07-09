@@ -54,36 +54,24 @@ export class BetKnessetTimesStack extends Stack {
 
     docGenHandler.grantInvoke(weeklyDocGenHandler);
  
+    const layer = lambda.LayerVersion.fromLayerVersionArn(this, 'PuppeteerLayer',
+      'arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:38'
+    );
 
     const timesUploaderHandler = new lambda_nodejs.NodejsFunction(this, "TimesUploader", {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesFileGenerator.js',
       handler: "handler",
       timeout: Duration.seconds(120),
       memorySize: 1024, // Minimum for Chromium
-bundling: {
-  nodeModules: ['chrome-aws-lambda', 'puppeteer-core'],
-  externalModules: [],
-  commandHooks: {
-    beforeBundling(inputDir, outputDir) {
-      return [
-        `mkdir -p ${outputDir}/node_modules/chrome-aws-lambda`,
-        // Copy Chromium binaries from node_modules into output bundle
-        `cp -r ${inputDir}/node_modules/chrome-aws-lambda/bin ${outputDir}/node_modules/chrome-aws-lambda/`,
-      ];
-    },
-    afterBundling() {
-      return [];
-    },
-    beforeInstall() {
-      return [];
-    },
-  },
-},
+      bundling: {
+        nodeModules: ['chrome-aws-lambda', 'puppeteer-core'],
+      },
       environment: {
         BUCKET: bucket.bucketName
-      }
+      },
+      layers: [layer]
     });
 
     const param = ssm.StringParameter.fromSecureStringParameterAttributes(this, `ParameterCreds`, {
