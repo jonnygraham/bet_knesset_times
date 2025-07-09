@@ -3,7 +3,6 @@
 import { js2xml } from 'xml-js';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { calculateTimes } from './lookupTimes.js';
-import chromium from 'chrome-aws-lambda';
 import puppeteer from 'puppeteer-core';
 import fs from 'fs/promises';
 import path from 'path';
@@ -45,17 +44,15 @@ async function uploadViaPuppeteer(xmlString, filename, creds) {
   const filePath = `/tmp/${filename}`;
   await fs.writeFile(filePath, xmlString);
 
-  const executablePath1 = await chromium.executablePath;
-  console.log("Using Chromium executable at:", executablePath1);
-
-const executablePath = await chromium.executablePath || '/usr/bin/chromium-browser'; // fallback
-
-  console.log("Using Chromium executable at:", executablePath);
 const browser = await puppeteer.launch({
-  args: chromium.args,
-  defaultViewport: chromium.defaultViewport,
-  executablePath,
-  headless: chromium.headless,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--single-process',
+    '--no-zygote'
+  ],
+  executablePath: '/opt/chromium',  // 👈 comes from the Lambda Layer
+  headless: true,
 });
 
   const page = await browser.newPage();

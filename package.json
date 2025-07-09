@@ -31,7 +31,6 @@
     "aws-cdk-lib": "^2.168.0",
     "aws-sdk": "^2.1586.0",
     "axios": "^1.4.0",
-    "chrome-aws-lambda": "^10.1.0",
     "constructs": "^10.0.0",
     "docxtemplater": "^3.31.5",
     "moment": "^2.29.4",
