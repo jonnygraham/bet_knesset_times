@@ -55,7 +55,7 @@ export class BetKnessetTimesStack extends Stack {
     docGenHandler.grantInvoke(weeklyDocGenHandler);
  
     const layer = lambda.LayerVersion.fromLayerVersionArn(this, 'PuppeteerLayer',
-      'arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:50'
+      'arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:102'
     );
 
     const timesUploaderHandler = new lambda_nodejs.NodejsFunction(this, "TimesUploader", {
