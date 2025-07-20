@@ -135,7 +135,9 @@ export async function calculateTimes(params: any): Promise<any> {
   week_mincha.subtract(week_mincha.get('minute') % 5, 'minute'); // Round down to 5 minutes
   console.log("Weekday mincha: " + week_mincha);
 
+  //const tzet1 = shkia1.add(20, 'minute');
   const tzet1 = await fetchTime(sunday, 'צאת הכוכבים');
+  //const tzet2 = shkia2.add(20, 'minute');
   const tzet2 = await fetchTime(thursday, 'צאת הכוכבים');
   console.log("Sunday tzet: " + tzet1);
   console.log("Thursday tzet: " + tzet2);
