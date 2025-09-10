@@ -38,7 +38,7 @@ export class BetKnessetTimesStack extends Stack {
     bucket.grantReadWrite(docGenHandler);
 
     const weeklyDocGenHandler = new lambda_nodejs.NodejsFunction(this, "WeeklyDocGenerator", {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesHandler.js',
       handler: "handler",
@@ -88,7 +88,7 @@ export class BetKnessetTimesStack extends Stack {
     });
 
     const timesCsvHandler = new lambda_nodejs.NodejsFunction(this, "TimesCsv", {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesCsvGenerator.js',
       handler: "handler",
