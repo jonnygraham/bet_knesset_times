@@ -102,7 +102,7 @@ export class BetKnessetTimesStack extends Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
-    const isDst = 'true';
+    const isDst = 'false';
     // Rule for Thursday at 18:00 UTC to update weekday times for next week
     const thursdayRule = new events.Rule(this, 'ThursdayScheduleRule', {
       schedule: events.Schedule.cron({ minute: '0', hour: '18', weekDay: 'THU' }),
