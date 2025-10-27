@@ -103,7 +103,7 @@ export async function calculateTimes(params: any): Promise<any> {
 
   const day_mincha_2 = shkiaMoment.clone().subtract(40, 'minute');
   day_mincha_2.subtract(day_mincha_2.get('minute') % 5, 'minute'); // Round down to 5 minutes
-
+  const sof_zman_shema = await fetchTime(shabbat, 'סוף זמן קריאת שמע גרא');
   //const dst = shkiaMoment.isDST();
 
   const day_shacharit = Moment('08:00', 'HH:mm');
@@ -157,6 +157,7 @@ export async function calculateTimes(params: any): Promise<any> {
     shabbat_special: params.shabbat_special ?? undefined,// calendar[shabbatDate].special,
     erev_mincha: params.erev_mincha ?? erev_mincha.format('HH:mm'),
     day_shacharit: params.day_shacharit ?? day_shacharit.format('HH:mm'),
+    sof_zman_shema: sof_zman_shema.format('HH:mm'),
     day_womens_shiur: params.day_womens_shiur ?? day_womens_shiur.format('HH:mm'),
     day_mincha_1: params.day_mincha_1 ?? day_mincha_1.format('HH:mm'),
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
