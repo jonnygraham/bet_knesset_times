@@ -16,11 +16,11 @@ export const handler = async (event) => {
     }
 
     var csv = '';
-    const headRow = 'תאריך,פרשה,מנחה ערב שבת,שחרית,מנחה גדולה,מנחה קטנה,ערבית מוצ״ש,מנחה חול,ערבית חול,ערבית חול 2\n';
+    const headRow = 'תאריך,פרשה,מנחה ערב שבת,שחרית,סוף זמן שמע,מנחה גדולה,מנחה קטנה,ערבית מוצ״ש,מנחה חול,ערבית חול,ערבית חול 2\n';
 
     csv = headRow;
     for(const timesData of times) {
-        const row = `${timesData.shabbat},${timesData.parsha},${timesData.erev_mincha},${timesData.day_shacharit},${timesData.day_mincha_1},${timesData.day_mincha_2},${timesData.motzash_arvit},${timesData.week_mincha},${timesData.week_arvit_1},${timesData.week_arvit_2}\n`
+        const row = `${timesData.shabbat},${timesData.parsha},${timesData.erev_mincha},${timesData.day_shacharit},${timesData.sof_zman_shema},${timesData.day_mincha_1},${timesData.day_mincha_2},${timesData.motzash_arvit},${timesData.week_mincha},${timesData.week_arvit_1},${timesData.week_arvit_2}\n`
         csv += row;
     }
 
