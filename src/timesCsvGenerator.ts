@@ -5,7 +5,9 @@ export const handler = async (event) => {
     var times : any[] = [];
     const { from, to , ...params } = event.queryStringParameters;
     if (from > to) throw new Error(`from [${from}] must be before to [${to}]!`);
-    params.shabbat = from;
+    const nearestShabbat = Moment(from, "YYYY-MM-DD").day(6);  
+    params.shabbat = nearestShabbat.format('YYYY-MM-DD');
+    console.log("Starting from Shabbat "+params.shabbat);
     while (params.shabbat <= to) {
         const timesData = await calculateTimes(params);
         times.push(timesData);
