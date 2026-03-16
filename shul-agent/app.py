@@ -7,6 +7,7 @@ import httpx
 from datetime import datetime
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.settings import ModelSettings
+from pydantic_ai.usage import UsageLimits
 from playwright.async_api import async_playwright
 
 SHEETS_ID = "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo"
@@ -91,7 +92,7 @@ async def _run():
             f"compose the WhatsApp message, and send it.",
             model_settings=ModelSettings(max_tokens=4096),
             message_history=None,
-            usage_limits={"request_limit": 10},
+            usage_limits=UsageLimits(request_limit=10),
         )
         print(f"Agent completed. Usage: {result.usage()}")
         return result.data
