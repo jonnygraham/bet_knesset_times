@@ -39,7 +39,7 @@ export class ShulAgentStack extends Stack {
     });
 
     // Cap concurrency — only 1 execution at a time
-    new lambda.CfnFunction(fn.node.defaultChild as any).addOverride(
+    (fn.node.defaultChild as lambda.CfnFunction).addOverride(
       'Properties.ReservedConcurrentExecutions', 1
     );
 
