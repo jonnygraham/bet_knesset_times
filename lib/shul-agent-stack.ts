@@ -29,8 +29,11 @@ export class ShulAgentStack extends Stack {
       ],
     }));
 
-    // Limit concurrent executions to prevent runaway costs
-    fn.addAlias('live', {
+    // Limit retries from EventBridge
+    const version = fn.currentVersion;
+    const alias = new lambda.Alias(this, 'ShulAgentAlias', {
+      aliasName: 'live',
+      version,
       maxEventAge: Duration.minutes(5),
       retryAttempts: 0,
     });
@@ -48,7 +51,7 @@ export class ShulAgentStack extends Stack {
     // Every Friday at 08:00 UTC (~10:00 Israel time)
     new events.Rule(this, 'WeeklyTrigger', {
       schedule: events.Schedule.cron({ minute: '0', hour: '4', weekDay: 'FRI' }),
-      targets: [new targets.LambdaFunction(fn)],
+      targets: [new targets.LambdaFunction(alias)],
     });
 
     new CfnOutput(this, 'ShulAgentUrl', { value: fnUrl.url });
