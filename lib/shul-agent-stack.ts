@@ -16,7 +16,7 @@ export class ShulAgentStack extends Stack {
     const fn = new lambda.DockerImageFunction(this, 'ShulAgentFn', {
       functionName: 'shul-agent',
       code: lambda.DockerImageCode.fromImageAsset(
-        path.join(__dirname, '../shul-agent')
+        path.join(__dirname, '../../shul-agent')
       ),
       memorySize: 2048,
       timeout: Duration.minutes(5),
