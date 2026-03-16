@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.parse
 
 import boto3
@@ -14,16 +15,29 @@ SHEETS_ID = "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo"
 UNISYN_URL = "https://unisyn.org.il/%D7%9C%D7%95%D7%97-%D7%93%D7%99%D7%A0%D7%99%D7%9D-%D7%95%D7%9E%D7%A0%D7%94%D7%92%D7%99%D7%9D"
 PHONE = "+972543041655"
 
-ssm = boto3.client("ssm")
+_ssm = None
+_gemini_key_loaded = False
 
-os.environ["GEMINI_API_KEY"] = ssm.get_parameter(
-    Name=os.environ.get("GEMINI_API_KEY_PARAM", "/shul-agent/gemini-api-key"),
-    WithDecryption=True,
-)["Parameter"]["Value"]
+
+def _get_ssm():
+    global _ssm
+    if _ssm is None:
+        _ssm = boto3.client("ssm")
+    return _ssm
+
+
+def _ensure_gemini_key():
+    global _gemini_key_loaded
+    if not _gemini_key_loaded:
+        param_name = os.environ.get("GEMINI_API_KEY_PARAM", "/shul-agent/gemini-api-key")
+        os.environ["GEMINI_API_KEY"] = _get_ssm().get_parameter(
+            Name=param_name, WithDecryption=True
+        )["Parameter"]["Value"]
+        _gemini_key_loaded = True
 
 
 def get_param(name: str) -> str:
-    return ssm.get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
+    return _get_ssm().get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
 
 
 async def get_birthdays(ctx: RunContext[None]) -> str:
@@ -31,10 +45,12 @@ async def get_birthdays(ctx: RunContext[None]) -> str:
     url = f"https://docs.google.com/spreadsheets/d/{SHEETS_ID}/gviz/tq?tqx=out:json"
     async with httpx.AsyncClient() as client:
         resp = await client.get(url, timeout=15)
-    # Response is wrapped in google.visualization.Query.setResponse({...})
     raw = resp.text
-    json_str = raw[raw.index("{") : raw.rindex("}") + 1]
-    data = json.loads(json_str)
+    # Extract JSON from google.visualization.Query.setResponse({...});
+    match = re.search(r"setResponse\((.+)\);?\s*$", raw)
+    if not match:
+        return json.dumps({"error": "Could not parse Google Sheets response"})
+    data = json.loads(match.group(1))
     cols = [c.get("label", "") for c in data["table"]["cols"]]
     rows = []
     for row in data["table"]["rows"]:
@@ -46,10 +62,12 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
     """Browse the UniSyn minhagim page and return the current month's halachic calendar content."""
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=["--no-sandbox", "--disable-gpu", "--single-process"])
-        page = await browser.new_page()
-        await page.goto(UNISYN_URL, timeout=30000, wait_until="networkidle")
-        text = await page.inner_text("body")
-        await browser.close()
+        try:
+            page = await browser.new_page()
+            await page.goto(UNISYN_URL, timeout=30000, wait_until="networkidle")
+            text = await page.inner_text("body")
+        finally:
+            await browser.close()
     return text[:15000]
 
 
@@ -85,13 +103,13 @@ agent = Agent(
 
 
 async def _run():
+    _ensure_gemini_key()
     today = datetime.now().strftime("%Y-%m-%d")
     try:
         result = await agent.run(
             f"Today is {today}. Please look up this week's minhagim, check for birthdays, "
             f"compose the WhatsApp message, and send it.",
             model_settings=ModelSettings(max_tokens=4096),
-            message_history=None,
             usage_limits=UsageLimits(request_limit=10),
         )
         print(f"Agent completed. Usage: {result.usage()}")
