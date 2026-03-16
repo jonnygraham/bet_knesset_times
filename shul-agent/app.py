@@ -86,7 +86,7 @@ async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
 
 
 agent = Agent(
-    "google-gla:gemini-2.0-flash",
+    "google-gla:gemini-2.5-flash",
     tools=[get_birthdays, get_minhagim, send_whatsapp],
     system_prompt=(
         "You are a shul (synagogue) weekly assistant. Your job:\n"
