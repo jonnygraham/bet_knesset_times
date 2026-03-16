@@ -3,6 +3,7 @@ import sourceMapSupport from 'source-map-support'
 sourceMapSupport.install();
 import * as cdk from 'aws-cdk-lib';
 import { BetKnessetTimesStack } from '../lib/bet_knesset_times-stack.js';
+import { ShulAgentStack } from '../lib/shul-agent-stack.js';
 
 const app = new cdk.App();
 new BetKnessetTimesStack(app, 'BetKnessetTimesStack', {
@@ -19,4 +20,8 @@ new BetKnessetTimesStack(app, 'BetKnessetTimesStack', {
    env: { account: '833000775413', region: 'us-east-1' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+});
+
+new ShulAgentStack(app, 'ShulAgentStack', {
+  env: { account: '833000775413', region: 'us-east-1' },
 });
