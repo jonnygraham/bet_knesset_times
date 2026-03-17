@@ -30,7 +30,7 @@ def _ensure_gemini_key():
     global _gemini_key_loaded
     if not _gemini_key_loaded:
         param_name = os.environ.get("GEMINI_API_KEY_PARAM", "/shul-agent/gemini-api-key")
-        os.environ["GEMINI_API_KEY"] = _get_ssm().get_parameter(
+        os.environ["GOOGLE_API_KEY"] = _get_ssm().get_parameter(
             Name=param_name, WithDecryption=True
         )["Parameter"]["Value"]
         _gemini_key_loaded = True
@@ -85,25 +85,33 @@ async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
     return f"WhatsApp sent, status: {resp.status_code}"
 
 
-agent = Agent(
-    "google-gla:gemini-2.5-flash",
-    tools=[get_birthdays, get_minhagim, send_whatsapp],
-    system_prompt=(
-        "You are a shul (synagogue) weekly assistant. Your job:\n"
-        "1. Use get_minhagim to read this week's and next week's halachic minhagim from the UniSyn page.\n"
-        "2. Use get_birthdays to read the members spreadsheet and find anyone whose birthday "
-        "falls during this week's or next week's parsha dates.\n"
-        "3. Compose a clear, warm WhatsApp message in Hebrew summarizing:\n"
-        "   - Key minhagim/dinim for this and next Shabbat\n"
-        "   - Birthday wishes for relevant members\n"
-        "4. Use send_whatsapp to send the composed message.\n"
-        "Keep the message concise and friendly. Use emojis sparingly."
-    ),
-)
+_agent = None
+
+
+def _get_agent():
+    global _agent
+    if _agent is None:
+        _ensure_gemini_key()
+        _agent = Agent(
+            "google-gla:gemini-2.5-flash",
+            tools=[get_birthdays, get_minhagim, send_whatsapp],
+            system_prompt=(
+                "You are a shul (synagogue) weekly assistant. Your job:\n"
+                "1. Use get_minhagim to read this week's and next week's halachic minhagim from the UniSyn page.\n"
+                "2. Use get_birthdays to read the members spreadsheet and find anyone whose birthday "
+                "falls during this week's or next week's parsha dates.\n"
+                "3. Compose a clear, warm WhatsApp message in Hebrew summarizing:\n"
+                "   - Key minhagim/dinim for this and next Shabbat\n"
+                "   - Birthday wishes for relevant members\n"
+                "4. Use send_whatsapp to send the composed message.\n"
+                "Keep the message concise and friendly. Use emojis sparingly."
+            ),
+        )
+    return _agent
 
 
 async def _run():
-    _ensure_gemini_key()
+    agent = _get_agent()
     today = datetime.now().strftime("%Y-%m-%d")
     try:
         result = await agent.run(
