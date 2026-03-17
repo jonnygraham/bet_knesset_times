@@ -43,7 +43,7 @@ def get_param(name: str) -> str:
     return _get_ssm().get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
 
 
-async def get_sheet_data(ctx: RunContext[None], sheet_name: str) -> str:
+async def get_sheet_data(ctx: RunContext[bool], sheet_name: str) -> str:
     """Read data from a named Google Sheet. Available sheets: bar_mitzvah.
     The bar_mitzvah sheet contains members' bar mitzvah dates (Hebrew birthday)."""
     sheet_id = SHEETS.get(sheet_name)
@@ -64,7 +64,7 @@ async def get_sheet_data(ctx: RunContext[None], sheet_name: str) -> str:
     return json.dumps(rows, ensure_ascii=False)
 
 
-async def get_minhagim(ctx: RunContext[None]) -> str:
+async def get_minhagim(ctx: RunContext[bool]) -> str:
     """Browse the UniSyn minhagim page and return the current month's halachic calendar content."""
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=["--no-sandbox", "--disable-gpu", "--single-process"])
@@ -77,7 +77,7 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
     return text[:15000]
 
 
-async def get_shabbat_times(ctx: RunContext[None]) -> str:
+async def get_shabbat_times(ctx: RunContext[bool]) -> str:
     """Get the calculated shabbat and weekday tefillah times for the upcoming shabbat.
     Returns erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1."""
     from datetime import timedelta
@@ -164,10 +164,13 @@ def _split_message(message: str, limit: int = 450) -> list[str]:
     return chunks
 
 
-async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
+async def send_whatsapp(ctx: RunContext[bool], message: str) -> str:
     """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
-    api_key = get_param("/shul-agent/whatabot-api-key")
     print(f"Message to send:\n{message}")
+    if not ctx.deps:
+        print("send=false, skipping actual WhatsApp send")
+        return "Message logged (send=false, not actually sent)"
+    api_key = get_param("/shul-agent/whatabot-api-key")
     chunks = _split_message(message)
     print(f"Split into {len(chunks)} chunks")
     statuses = []
@@ -189,6 +192,7 @@ def _get_agent():
         _ensure_gemini_key()
         _agent = Agent(
             "google-gla:gemini-2.5-flash",
+            deps_type=bool,
             tools=[get_sheet_data, get_minhagim, get_shabbat_times, send_whatsapp],
             system_prompt=(
                 "You are a shul (synagogue) weekly assistant preparing a message for the Gabbays.\n"
@@ -213,14 +217,14 @@ def _get_agent():
 async def _run(weeks_ahead: int = 1, send: bool = True):
     agent = _get_agent()
     today = datetime.now().strftime("%Y-%m-%d")
-    send_instruction = "compose the message, and send it via send_whatsapp." if send else "compose the message and return it (do NOT send via WhatsApp)."
     prompt = (
         f"Today is {today}. Please look up minhagim, shabbat times, and bar mitzvah aliyot "
-        f"for the next {weeks_ahead} week(s) of Shabbat, then {send_instruction}"
+        f"for the next {weeks_ahead} week(s) of Shabbat, then compose and send the message via send_whatsapp."
     )
     try:
         result = await agent.run(
             prompt,
+            deps=send,
             model_settings=ModelSettings(max_tokens=4096),
             usage_limits=UsageLimits(request_limit=15),
         )
