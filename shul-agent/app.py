@@ -89,14 +89,17 @@ async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int
 
 
 def _split_message(message: str, limit: int = 450) -> list[str]:
-    """Split message on double newlines, keeping chunks under the limit."""
-    paragraphs = message.split("\n\n")
+    """Split message keeping chunks under the limit. Splits on double newlines, then single newlines."""
+    lines = message.split("\n")
     chunks, current = [], ""
-    for para in paragraphs:
-        if current and len(current) + len(para) + 2 > limit:
-            chunks.append(current.strip())
-            current = ""
-        current += ("" if not current else "\n\n") + para
+    for line in lines:
+        candidate = (current + "\n" + line) if current else line
+        if len(candidate) > limit:
+            if current:
+                chunks.append(current.strip())
+            current = line
+        else:
+            current = candidate
     if current.strip():
         chunks.append(current.strip())
     return chunks
