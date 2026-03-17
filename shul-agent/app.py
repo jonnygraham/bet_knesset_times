@@ -71,18 +71,31 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
     return text[:15000]
 
 
-async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
-    """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
-    api_key = get_param("/shul-agent/whatabot-api-key")
+async def _send_wa(api_key: str, text: str) -> int:
     url = (
         f"https://api.whatabot.net/whatsapp/sendMessage"
         f"?apikey={api_key}"
-        f"&text={urllib.parse.quote(message)}"
+        f"&text={urllib.parse.quote(text)}"
         f"&phone={urllib.parse.quote(PHONE)}"
     )
     async with httpx.AsyncClient() as client:
         resp = await client.get(url, timeout=30)
-    return f"WhatsApp sent, status: {resp.status_code}"
+    print(f"WhatsApp response ({resp.status_code}): {resp.text[:500]}")
+    return resp.status_code
+
+
+async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
+    """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
+    api_key = get_param("/shul-agent/whatabot-api-key")
+    print(f"Message to send:\n{message}")
+
+    # Test with a simple message first
+    test_status = await _send_wa(api_key, "hi there")
+    print(f"Test message status: {test_status}")
+
+    # Now send the real message
+    real_status = await _send_wa(api_key, message)
+    return f"Test msg: {test_status}, Real msg: {real_status}"
 
 
 _agent = None
