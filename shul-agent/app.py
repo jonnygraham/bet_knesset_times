@@ -12,8 +12,11 @@ from pydantic_ai.settings import ModelSettings
 from pydantic_ai.usage import UsageLimits
 from playwright.async_api import async_playwright
 
-SHEETS_ID = "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo"
+SHEETS = {
+    "bar_mitzvah": "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo",
+}
 UNISYN_URL = "https://unisyn.org.il/%D7%9C%D7%95%D7%97-%D7%93%D7%99%D7%A0%D7%99%D7%9D-%D7%95%D7%9E%D7%A0%D7%94%D7%92%D7%99%D7%9D"
+TIMES_LAMBDA_URL = "https://y4knms6qijsgs6yzrx462uvxxm0xuepq.lambda-url.us-east-1.on.aws/"
 PHONE = "+972543041655"
 
 _ssm = None
@@ -41,13 +44,16 @@ def get_param(name: str) -> str:
     return _get_ssm().get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
 
 
-async def get_birthdays(ctx: RunContext[None]) -> str:
-    """Read the member birthday list from the public Google Sheet."""
-    url = f"https://docs.google.com/spreadsheets/d/{SHEETS_ID}/gviz/tq?tqx=out:json"
+async def get_sheet_data(ctx: RunContext[None], sheet_name: str) -> str:
+    """Read data from a named Google Sheet. Available sheets: bar_mitzvah.
+    The bar_mitzvah sheet contains members' bar mitzvah dates (Hebrew birthday)."""
+    sheet_id = SHEETS.get(sheet_name)
+    if not sheet_id:
+        return json.dumps({"error": f"Unknown sheet: {sheet_name}. Available: {list(SHEETS.keys())}"})
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:json"
     async with httpx.AsyncClient() as client:
         resp = await client.get(url, timeout=15)
     raw = resp.text
-    # Extract JSON from google.visualization.Query.setResponse({...});
     match = re.search(r"setResponse\((.+)\);?\s*$", raw)
     if not match:
         return json.dumps({"error": "Could not parse Google Sheets response"})
@@ -72,6 +78,14 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
     return text[:15000]
 
 
+async def get_shabbat_times(ctx: RunContext[None]) -> str:
+    """Get the calculated shabbat and weekday tefillah times for the upcoming shabbat.
+    Returns times like erev_mincha, shacharit, mincha, arvit, motzash etc."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(TIMES_LAMBDA_URL, timeout=30)
+    return resp.text[:5000]
+
+
 async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int:
     url = (
         f"https://api.whatabot.net/whatsapp/sendMessage"
@@ -89,7 +103,7 @@ async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int
 
 
 def _split_message(message: str, limit: int = 450) -> list[str]:
-    """Split message keeping chunks under the limit. Splits on double newlines, then single newlines."""
+    """Split message keeping chunks under the limit. Splits on single newlines."""
     lines = message.split("\n")
     chunks, current = [], ""
     for line in lines:
@@ -130,32 +144,38 @@ def _get_agent():
         _ensure_gemini_key()
         _agent = Agent(
             "google-gla:gemini-2.5-flash",
-            tools=[get_birthdays, get_minhagim, send_whatsapp],
+            tools=[get_sheet_data, get_minhagim, get_shabbat_times, send_whatsapp],
             system_prompt=(
                 "You are a shul (synagogue) weekly assistant preparing a message for the Gabbays.\n"
-                "1. Use get_minhagim to read this week's and next week's halachic minhagim from the UniSyn page.\n"
-                "2. Use get_birthdays to read the members spreadsheet. The dates are bar mitzvah dates (Hebrew birthday).\n"
-                "   Find anyone whose bar mitzvah date falls during this week's or next week's parsha.\n"
+                "1. Use get_minhagim to read the halachic minhagim from the UniSyn page.\n"
+                "2. Use get_sheet_data with sheet_name='bar_mitzvah' to read the members spreadsheet.\n"
+                "   The dates are bar mitzvah dates (Hebrew birthday).\n"
+                "   Find anyone whose bar mitzvah date falls during the relevant parsha week(s).\n"
                 "   These people should be offered an aliyah on that Shabbat.\n"
-                "3. Compose a clear WhatsApp message in Hebrew for the Gabbays summarizing:\n"
-                "   - Key minhagim/dinim for this and next Shabbat\n"
+                "3. Use get_shabbat_times to get the calculated tefillah times for the upcoming shabbat.\n"
+                "4. Compose a clear WhatsApp message in Hebrew for the Gabbays summarizing:\n"
+                "   - Shabbat tefillah times (candle lighting, shacharit, mincha, arvit, motzash, weekday times)\n"
+                "   - Key minhagim/dinim for the relevant Shabbat(ot)\n"
                 "   - List of members who should get an aliyah (bar mitzvah anniversary)\n"
-                "4. Use send_whatsapp to send the composed message.\n"
+                "5. Use send_whatsapp to send the composed message.\n"
                 "Keep the message concise and practical."
             ),
         )
     return _agent
 
 
-async def _run():
+async def _run(weeks_ahead: int = 1):
     agent = _get_agent()
     today = datetime.now().strftime("%Y-%m-%d")
+    prompt = (
+        f"Today is {today}. Please look up minhagim, shabbat times, and bar mitzvah aliyot "
+        f"for the next {weeks_ahead} week(s) of Shabbat, compose the message, and send it."
+    )
     try:
         result = await agent.run(
-            f"Today is {today}. Please look up this week's minhagim, check for birthdays, "
-            f"compose the WhatsApp message, and send it.",
+            prompt,
             model_settings=ModelSettings(max_tokens=4096),
-            usage_limits=UsageLimits(request_limit=10),
+            usage_limits=UsageLimits(request_limit=15),
         )
         print(f"Agent completed. Usage: {result.usage()}")
         return result.output
@@ -165,9 +185,14 @@ async def _run():
 
 
 def handler(event, context):
+    # Support weeks_ahead via query string or event payload
+    weeks = 1
+    if isinstance(event, dict):
+        qs = event.get("queryStringParameters") or {}
+        weeks = int(qs.get("weeks", event.get("weeks", 1)))
     loop = asyncio.new_event_loop()
     try:
-        data = loop.run_until_complete(_run())
+        data = loop.run_until_complete(_run(weeks_ahead=weeks))
         return {"statusCode": 200, "body": data}
     finally:
         loop.close()
