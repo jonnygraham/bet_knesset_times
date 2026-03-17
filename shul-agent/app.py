@@ -121,7 +121,7 @@ async def _run():
             usage_limits=UsageLimits(request_limit=10),
         )
         print(f"Agent completed. Usage: {result.usage()}")
-        return result.data
+        return result.output
     except Exception as e:
         print(f"Agent failed: {type(e).__name__}: {e}")
         raise
