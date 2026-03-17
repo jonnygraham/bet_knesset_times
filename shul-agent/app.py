@@ -190,9 +190,13 @@ def handler(event, context):
     if isinstance(event, dict):
         qs = event.get("queryStringParameters") or {}
         weeks = int(qs.get("weeks", event.get("weeks", 1)))
-    loop = asyncio.new_event_loop()
     try:
-        data = loop.run_until_complete(_run(weeks_ahead=weeks))
-        return {"statusCode": 200, "body": data}
-    finally:
-        loop.close()
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    data = loop.run_until_complete(_run(weeks_ahead=weeks))
+    return {"statusCode": 200, "body": data}
