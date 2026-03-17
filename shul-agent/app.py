@@ -80,9 +80,12 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
 
 async def get_shabbat_times(ctx: RunContext[None]) -> str:
     """Get the calculated shabbat and weekday tefillah times for the upcoming shabbat.
-    Returns times like erev_mincha, shacharit, mincha, arvit, motzash etc."""
+    Calls the times calculator Lambda which returns times as JSON.
+    Key times to include in the message: erev_mincha, day_mincha_2 (mincha ktana on shabbat),
+    motzash_arvit, week_mincha, week_arvit_1."""
     async with httpx.AsyncClient() as client:
-        resp = await client.get(TIMES_LAMBDA_URL, timeout=30)
+        resp = await client.get(TIMES_LAMBDA_URL, timeout=60)
+    print(f"Times Lambda response ({resp.status_code}): {resp.text[:1000]}")
     return resp.text[:5000]
 
 
@@ -154,7 +157,8 @@ def _get_agent():
                 "   These people should be offered an aliyah on that Shabbat.\n"
                 "3. Use get_shabbat_times to get the calculated tefillah times for the upcoming shabbat.\n"
                 "4. Compose a clear WhatsApp message in Hebrew for the Gabbays summarizing:\n"
-                "   - Shabbat tefillah times (candle lighting, shacharit, mincha, arvit, motzash, weekday times)\n"
+                "   - Shabbat times: erev_mincha (מנחה ערב שבת), day_mincha_2 (מנחה קטנה בשבת),\n"
+                "     motzash_arvit (ערבית מוצ״ש), week_mincha (מנחה בימות השבוע), week_arvit_1 (ערבית בימות השבוע)\n"
                 "   - Key minhagim/dinim for the relevant Shabbat(ot)\n"
                 "   - List of members who should get an aliyah (bar mitzvah anniversary)\n"
                 "5. Use send_whatsapp to send the composed message.\n"
@@ -164,12 +168,13 @@ def _get_agent():
     return _agent
 
 
-async def _run(weeks_ahead: int = 1):
+async def _run(weeks_ahead: int = 1, send: bool = True):
     agent = _get_agent()
     today = datetime.now().strftime("%Y-%m-%d")
+    send_instruction = "compose the message, and send it via send_whatsapp." if send else "compose the message and return it (do NOT send via WhatsApp)."
     prompt = (
         f"Today is {today}. Please look up minhagim, shabbat times, and bar mitzvah aliyot "
-        f"for the next {weeks_ahead} week(s) of Shabbat, compose the message, and send it."
+        f"for the next {weeks_ahead} week(s) of Shabbat, then {send_instruction}"
     )
     try:
         result = await agent.run(
@@ -185,11 +190,13 @@ async def _run(weeks_ahead: int = 1):
 
 
 def handler(event, context):
-    # Support weeks_ahead via query string or event payload
+    # Support weeks_ahead and send via query string or event payload
     weeks = 1
+    send = True
     if isinstance(event, dict):
         qs = event.get("queryStringParameters") or {}
         weeks = int(qs.get("weeks", event.get("weeks", 1)))
+        send = str(qs.get("send", event.get("send", "true"))).lower() != "false"
     try:
         loop = asyncio.get_event_loop()
         if loop.is_closed():
@@ -198,5 +205,5 @@ def handler(event, context):
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    data = loop.run_until_complete(_run(weeks_ahead=weeks))
+    data = loop.run_until_complete(_run(weeks_ahead=weeks, send=send))
     return {"statusCode": 200, "body": data}
