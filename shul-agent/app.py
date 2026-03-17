@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -71,31 +72,24 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
     return text[:15000]
 
 
-async def _send_wa(api_key: str, text: str) -> int:
-    url = (
-        f"https://api.whatabot.net/whatsapp/sendMessage"
-        f"?apikey={api_key}"
-        f"&text={urllib.parse.quote(text)}"
-        f"&phone={urllib.parse.quote(PHONE)}"
-    )
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(url, timeout=30)
-    print(f"WhatsApp response ({resp.status_code}): {resp.text[:500]}")
-    return resp.status_code
-
-
 async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
     """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
     api_key = get_param("/shul-agent/whatabot-api-key")
     print(f"Message to send:\n{message}")
-
-    # Test with a simple message first
-    test_status = await _send_wa(api_key, "hi there")
-    print(f"Test message status: {test_status}")
-
-    # Now send the real message
-    real_status = await _send_wa(api_key, message)
-    return f"Test msg: {test_status}, Real msg: {real_status}"
+    url = (
+        f"https://api.whatabot.net/whatsapp/sendMessage"
+        f"?apikey={api_key}"
+        f"&text={urllib.parse.quote(message)}"
+        f"&phone={urllib.parse.quote(PHONE)}"
+    )
+    async with httpx.AsyncClient() as client:
+        for attempt in range(3):
+            resp = await client.get(url, timeout=30)
+            print(f"WhatsApp attempt {attempt+1}: {resp.status_code} {resp.text[:200]}")
+            if resp.status_code != 429:
+                break
+            await asyncio.sleep(6)
+    return f"WhatsApp status: {resp.status_code}"
 
 
 _agent = None
@@ -141,7 +135,6 @@ async def _run():
 
 
 def handler(event, context):
-    import asyncio
     loop = asyncio.new_event_loop()
     try:
         data = loop.run_until_complete(_run())
