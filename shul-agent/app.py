@@ -16,7 +16,6 @@ SHEETS = {
     "bar_mitzvah": "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo",
 }
 UNISYN_URL = "https://unisyn.org.il/%D7%9C%D7%95%D7%97-%D7%93%D7%99%D7%A0%D7%99%D7%9D-%D7%95%D7%9E%D7%A0%D7%94%D7%92%D7%99%D7%9D"
-TIMES_LAMBDA_URL = "https://y4knms6qijsgs6yzrx462uvxxm0xuepq.lambda-url.us-east-1.on.aws/"
 PHONE = "+972543041655"
 
 _ssm = None
@@ -80,13 +79,56 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
 
 async def get_shabbat_times(ctx: RunContext[None]) -> str:
     """Get the calculated shabbat and weekday tefillah times for the upcoming shabbat.
-    Calls the times calculator Lambda which returns times as JSON.
-    Key times to include in the message: erev_mincha, day_mincha_2 (mincha ktana on shabbat),
-    motzash_arvit, week_mincha, week_arvit_1."""
+    Returns erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1."""
+    from datetime import timedelta
+
+    today = datetime.now()
+    days_until_sat = (5 - today.weekday()) % 7 + 1
+    shabbat = today + timedelta(days=days_until_sat)
+
+    async def fetch_time(client, date, name):
+        ds = date.strftime("%Y%m%d")
+        url = f"https://calendar.2net.co.il/todaytimes.aspx?city=%D7%9E%D7%91%D7%95%D7%90%20%D7%97%D7%95%D7%A8%D7%95%D7%9F&today={ds}"
+        resp = await client.get(url, timeout=15)
+        match = re.search(rf'{name}[^\d]*(\d\d:\d\d)', resp.text)
+        return match.group(1) if match else None
+
+    def parse_hm(t):
+        return int(t[:2]), int(t[3:])
+
+    def fmt(total_min):
+        return f"{total_min // 60:02d}:{total_min % 60:02d}"
+
+    def round_down_5(m):
+        return m - (m % 5)
+
+    def round_up_5(m):
+        return m + (5 - m % 5) % 5
+
     async with httpx.AsyncClient() as client:
-        resp = await client.get(TIMES_LAMBDA_URL, timeout=60)
-    print(f"Times Lambda response ({resp.status_code}): {resp.text[:1000]}")
-    return resp.text[:5000]
+        shkia = await fetch_time(client, shabbat, 'שקיעה מישורית')
+        motzash = await fetch_time(client, shabbat, 'צאת השבת')
+        sunday = shabbat + timedelta(days=1)
+        thursday = shabbat + timedelta(days=5)
+        shkia_sun = await fetch_time(client, sunday, 'שקיעה מישורית')
+        shkia_thu = await fetch_time(client, thursday, 'שקיעה מישורית')
+
+    times = {}
+    if shkia:
+        h, m = parse_hm(shkia)
+        total = h * 60 + m
+        times["erev_mincha"] = fmt(round_down_5(total - 14))
+        times["day_mincha_2"] = fmt(round_down_5(total - 40))
+    if motzash:
+        times["motzash_arvit"] = motzash
+    if shkia_sun and shkia_thu:
+        sun_m = sum(a * b for a, b in zip(parse_hm(shkia_sun), (60, 1)))
+        thu_m = sum(a * b for a, b in zip(parse_hm(shkia_thu), (60, 1)))
+        times["week_mincha"] = fmt(round_down_5(min(sun_m, thu_m) - 13))
+        times["week_arvit_1"] = fmt(round_up_5(max(sun_m, thu_m) + 20))
+
+    print(f"Calculated times: {times}")
+    return json.dumps(times, ensure_ascii=False)
 
 
 async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int:

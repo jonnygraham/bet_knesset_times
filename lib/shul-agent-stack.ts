@@ -22,7 +22,6 @@ export class ShulAgentStack extends Stack {
       timeout: Duration.minutes(5),
       environment: {
         GEMINI_API_KEY_PARAM: '/shul-agent/gemini-api-key',
-        TIMES_LAMBDA_URL: 'https://y4knms6qijsgs6yzrx462uvxxm0xuepq.lambda-url.us-east-1.on.aws/',
       },
     });
 
