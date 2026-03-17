@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/python:v1.51.0-noble
+FROM mcr.microsoft.com/playwright/python:v1.58.0-noble
 
 # Install Lambda runtime interface client
 RUN pip install --no-cache-dir awslambdaric
