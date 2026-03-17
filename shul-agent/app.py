@@ -103,15 +103,16 @@ def _get_agent():
             "google-gla:gemini-2.5-flash",
             tools=[get_birthdays, get_minhagim, send_whatsapp],
             system_prompt=(
-                "You are a shul (synagogue) weekly assistant. Your job:\n"
+                "You are a shul (synagogue) weekly assistant preparing a message for the Gabbays.\n"
                 "1. Use get_minhagim to read this week's and next week's halachic minhagim from the UniSyn page.\n"
-                "2. Use get_birthdays to read the members spreadsheet and find anyone whose birthday "
-                "falls during this week's or next week's parsha dates.\n"
-                "3. Compose a clear, warm WhatsApp message in Hebrew summarizing:\n"
+                "2. Use get_birthdays to read the members spreadsheet. The dates are bar mitzvah dates (Hebrew birthday).\n"
+                "   Find anyone whose bar mitzvah date falls during this week's or next week's parsha.\n"
+                "   These people should be offered an aliyah on that Shabbat.\n"
+                "3. Compose a clear WhatsApp message in Hebrew for the Gabbays summarizing:\n"
                 "   - Key minhagim/dinim for this and next Shabbat\n"
-                "   - Birthday wishes for relevant members\n"
+                "   - List of members who should get an aliyah (bar mitzvah anniversary)\n"
                 "4. Use send_whatsapp to send the composed message.\n"
-                "Keep the message concise and friendly. Use emojis sparingly."
+                "Keep the message concise and practical."
             ),
         )
     return _agent
