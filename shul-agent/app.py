@@ -86,10 +86,11 @@ async def get_shabbat_times(ctx: RunContext[bool]) -> str:
     days_until_sat = (5 - today.weekday()) % 7 + 1
     shabbat = today + timedelta(days=days_until_sat)
 
-    async def fetch_time(client, date, name):
+    async def fetch_time(date, name):
         ds = date.strftime("%Y%m%d")
         url = f"https://calendar.2net.co.il/todaytimes.aspx?city=%D7%9E%D7%91%D7%95%D7%90%20%D7%97%D7%95%D7%A8%D7%95%D7%9F&today={ds}"
-        resp = await client.get(url, timeout=15)
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=15)
         match = re.search(rf'{name}[^\d]*(\d\d:\d\d)', resp.text)
         return match.group(1) if match else None
 
@@ -105,13 +106,12 @@ async def get_shabbat_times(ctx: RunContext[bool]) -> str:
     def round_up_5(m):
         return m + (5 - m % 5) % 5
 
-    async with httpx.AsyncClient() as client:
-        shkia = await fetch_time(client, shabbat, 'שקיעה מישורית')
-        motzash = await fetch_time(client, shabbat, 'צאת השבת')
-        sunday = shabbat + timedelta(days=1)
-        thursday = shabbat + timedelta(days=5)
-        shkia_sun = await fetch_time(client, sunday, 'שקיעה מישורית')
-        shkia_thu = await fetch_time(client, thursday, 'שקיעה מישורית')
+    shkia = await fetch_time(shabbat, 'שקיעה מישורית')
+    motzash = await fetch_time(shabbat, 'צאת השבת')
+    sunday = shabbat + timedelta(days=1)
+    thursday = shabbat + timedelta(days=5)
+    shkia_sun = await fetch_time(sunday, 'שקיעה מישורית')
+    shkia_thu = await fetch_time(thursday, 'שקיעה מישורית')
 
     times = {}
     if shkia:
