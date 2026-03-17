@@ -72,24 +72,50 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
     return text[:15000]
 
 
+async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int:
+    url = (
+        f"https://api.whatabot.net/whatsapp/sendMessage"
+        f"?apikey={api_key}"
+        f"&text={urllib.parse.quote(text)}"
+        f"&phone={urllib.parse.quote(PHONE)}"
+    )
+    for attempt in range(3):
+        resp = await client.get(url, timeout=30)
+        print(f"WhatsApp chunk ({len(text)} chars) attempt {attempt+1}: {resp.status_code} {resp.text[:200]}")
+        if resp.status_code != 429:
+            return resp.status_code
+        await asyncio.sleep(6)
+    return resp.status_code
+
+
+def _split_message(message: str, limit: int = 450) -> list[str]:
+    """Split message on double newlines, keeping chunks under the limit."""
+    paragraphs = message.split("\n\n")
+    chunks, current = [], ""
+    for para in paragraphs:
+        if current and len(current) + len(para) + 2 > limit:
+            chunks.append(current.strip())
+            current = ""
+        current += ("" if not current else "\n\n") + para
+    if current.strip():
+        chunks.append(current.strip())
+    return chunks
+
+
 async def send_whatsapp(ctx: RunContext[None], message: str) -> str:
     """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
     api_key = get_param("/shul-agent/whatabot-api-key")
     print(f"Message to send:\n{message}")
-    url = (
-        f"https://api.whatabot.net/whatsapp/sendMessage"
-        f"?apikey={api_key}"
-        f"&text={urllib.parse.quote(message)}"
-        f"&phone={urllib.parse.quote(PHONE)}"
-    )
+    chunks = _split_message(message)
+    print(f"Split into {len(chunks)} chunks")
+    statuses = []
     async with httpx.AsyncClient() as client:
-        for attempt in range(3):
-            resp = await client.get(url, timeout=30)
-            print(f"WhatsApp attempt {attempt+1}: {resp.status_code} {resp.text[:200]}")
-            if resp.status_code != 429:
-                break
-            await asyncio.sleep(6)
-    return f"WhatsApp status: {resp.status_code}"
+        for i, chunk in enumerate(chunks):
+            if i > 0:
+                await asyncio.sleep(6)
+            status = await _send_chunk(client, api_key, chunk)
+            statuses.append(status)
+    return f"WhatsApp sent in {len(chunks)} parts, statuses: {statuses}"
 
 
 _agent = None
