@@ -151,7 +151,7 @@ def _get_agent():
             deps_type=bool,
             tools=[get_sheet_data, get_minhagim, get_shabbat_times, send_whatsapp],
             system_prompt=(
-                "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the Gabbays.\n"
+                "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים (gabbays).\n"
                 "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
                 "2. Use get_sheet_data with sheet_name='bar_mitzvah' to read the members spreadsheet.\n"
                 "   The sheet is sorted by parsha. Column 'פרשה' has the parsha name.\n"
