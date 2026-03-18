@@ -7,11 +7,15 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+import { Fn } from 'aws-cdk-lib';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export class ShulAgentStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    const timesJsonUrl = Fn.importValue('TimesJsonUrl');
 
     const fn = new lambda.DockerImageFunction(this, 'ShulAgentFn', {
       functionName: 'shul-agent',
@@ -22,6 +26,7 @@ export class ShulAgentStack extends Stack {
       timeout: Duration.minutes(5),
       environment: {
         GEMINI_API_KEY_PARAM: '/shul-agent/gemini-api-key',
+        TIMES_JSON_URL: timesJsonUrl,
       },
     });
 

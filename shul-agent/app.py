@@ -17,6 +17,7 @@ SHEETS = {
 }
 UNISYN_URL = "https://unisyn.org.il/%D7%9C%D7%95%D7%97-%D7%93%D7%99%D7%A0%D7%99%D7%9D-%D7%95%D7%9E%D7%A0%D7%94%D7%92%D7%99%D7%9D"
 PHONE = "+972543041655"
+TIMES_JSON_URL = os.environ.get("TIMES_JSON_URL", "")
 
 _ssm = None
 _gemini_key_loaded = False
@@ -79,56 +80,11 @@ async def get_minhagim(ctx: RunContext[bool]) -> str:
 
 async def get_shabbat_times(ctx: RunContext[bool]) -> str:
     """Get the calculated shabbat and weekday tefillah times for the upcoming shabbat.
-    Returns erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1."""
-    from datetime import timedelta
-
-    today = datetime.now()
-    days_until_sat = (5 - today.weekday()) % 7 + 1
-    shabbat = today + timedelta(days=days_until_sat)
-
-    async def fetch_time(date, name):
-        ds = date.strftime("%Y%m%d")
-        url = f"https://calendar.2net.co.il/todaytimes.aspx?city=%D7%9E%D7%91%D7%95%D7%90%20%D7%97%D7%95%D7%A8%D7%95%D7%9F&today={ds}"
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(url, timeout=15)
-        match = re.search(rf'{name}[^\d]*(\d\d:\d\d)', resp.text)
-        return match.group(1) if match else None
-
-    def parse_hm(t):
-        return int(t[:2]), int(t[3:])
-
-    def fmt(total_min):
-        return f"{total_min // 60:02d}:{total_min % 60:02d}"
-
-    def round_down_5(m):
-        return m - (m % 5)
-
-    def round_up_5(m):
-        return m + (5 - m % 5) % 5
-
-    shkia = await fetch_time(shabbat, 'שקיעה מישורית')
-    motzash = await fetch_time(shabbat, 'צאת השבת')
-    sunday = shabbat + timedelta(days=1)
-    thursday = shabbat + timedelta(days=5)
-    shkia_sun = await fetch_time(sunday, 'שקיעה מישורית')
-    shkia_thu = await fetch_time(thursday, 'שקיעה מישורית')
-
-    times = {}
-    if shkia:
-        h, m = parse_hm(shkia)
-        total = h * 60 + m
-        times["erev_mincha"] = fmt(round_down_5(total - 14))
-        times["day_mincha_2"] = fmt(round_down_5(total - 40))
-    if motzash:
-        times["motzash_arvit"] = motzash
-    if shkia_sun and shkia_thu:
-        sun_m = sum(a * b for a, b in zip(parse_hm(shkia_sun), (60, 1)))
-        thu_m = sum(a * b for a, b in zip(parse_hm(shkia_thu), (60, 1)))
-        times["week_mincha"] = fmt(round_down_5(min(sun_m, thu_m) - 13))
-        times["week_arvit_1"] = fmt(round_up_5(max(sun_m, thu_m) + 20))
-
-    print(f"Calculated times: {times}")
-    return json.dumps(times, ensure_ascii=False)
+    Returns JSON with erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1 etc."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(TIMES_JSON_URL, timeout=30)
+    print(f"Times JSON response ({resp.status_code}): {resp.text[:2000]}")
+    return resp.text[:5000]
 
 
 async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int:
@@ -195,18 +151,18 @@ def _get_agent():
             deps_type=bool,
             tools=[get_sheet_data, get_minhagim, get_shabbat_times, send_whatsapp],
             system_prompt=(
-                "You are a shul (synagogue) weekly assistant preparing a message for the Gabbays.\n"
-                "1. Use get_minhagim to read the halachic minhagim from the UniSyn page.\n"
+                "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the Gabbays.\n"
+                "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
                 "2. Use get_sheet_data with sheet_name='bar_mitzvah' to read the members spreadsheet.\n"
-                "   The dates are bar mitzvah dates (Hebrew birthday).\n"
-                "   Find anyone whose bar mitzvah date falls during the relevant parsha week(s).\n"
-                "   These people should be offered an aliyah on that Shabbat.\n"
-                "3. Use get_shabbat_times to get the calculated tefillah times for the upcoming shabbat.\n"
-                "4. Compose a clear WhatsApp message in Hebrew for the Gabbays summarizing:\n"
-                "   - Shabbat times: erev_mincha (מנחה ערב שבת), day_mincha_2 (מנחה קטנה בשבת),\n"
-                "     motzash_arvit (ערבית מוצ״ש), week_mincha (מנחה בימות השבוע), week_arvit_1 (ערבית בימות השבוע)\n"
-                "   - Key minhagim/dinim for the relevant Shabbat(ot)\n"
-                "   - List of members who should get an aliyah (bar mitzvah anniversary)\n"
+                "   The sheet is sorted by parsha. Column 'פרשה' has the parsha name.\n"
+                "   Find ALL rows where פרשה matches the upcoming parsha(s). These members get an aliyah.\n"
+                "   Use columns שם פרטי (first name) and שם משפחה (family name).\n"
+                "3. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
+                "4. Compose a WhatsApp message in Hebrew for the Gabbays with this EXACT structure:\n"
+                "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
+                "   b) דינים ומנהגים section: key dinim for the Shabbat(ot)\n"
+                "   c) עליות section: list of names who get an aliyah\n"
+                "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
                 "5. Use send_whatsapp to send the composed message.\n"
                 "Keep the message concise and practical."
             ),
