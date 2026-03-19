@@ -45,32 +45,42 @@ def get_param(name: str) -> str:
     return _get_ssm().get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
 
 
-async def get_sheet_data(ctx: RunContext[bool], sheet_name: str) -> str:
-    """Read data from a named Google Sheet. Available sheets: bar_mitzvah, anim_zmirot.
-    bar_mitzvah: members sorted by parsha who get an aliyah. Columns: שם משפחה, שם פרטי, פרשה.
-    anim_zmirot: one boy per parsha who leads anim zmirot. First row is headers (פרשה, שם הילד).
-    The column labels may be empty — use the first data row as headers."""
-    sheet_id = SHEETS.get(sheet_name)
-    if not sheet_id:
-        return json.dumps({"error": f"Unknown sheet: {sheet_name}. Available: {list(SHEETS.keys())}"})
+async def _fetch_sheet(sheet_id: str) -> list[dict]:
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:json"
     async with httpx.AsyncClient() as client:
         resp = await client.get(url, timeout=15)
-    raw = resp.text
-    match = re.search(r"setResponse\((.+)\);?\s*$", raw)
+    match = re.search(r"setResponse\((.+)\);?\s*$", resp.text)
     if not match:
-        return json.dumps({"error": "Could not parse Google Sheets response"})
+        return []
     data = json.loads(match.group(1))
     cols = [c.get("label", "") for c in data["table"]["cols"]]
     all_rows = data["table"]["rows"]
-    # If column labels are empty, use first data row as headers
     if all(not c for c in cols) and all_rows:
         cols = [(cell["v"] if cell else "") for cell in all_rows[0]["c"]]
         all_rows = all_rows[1:]
-    rows = []
-    for row in all_rows:
-        rows.append({cols[i]: (cell["v"] if cell else None) for i, cell in enumerate(row["c"])})
-    return json.dumps(rows, ensure_ascii=False)
+    return [{cols[i]: (cell["v"] if cell else None) for i, cell in enumerate(row["c"])} for row in all_rows]
+
+
+async def get_aliyot(ctx: RunContext[bool], parsha: str) -> str:
+    """Get the list of members who get an aliyah for the given parsha name (e.g. ויקרא).
+    Returns names of members whose bar mitzvah parsha matches."""
+    rows = await _fetch_sheet(SHEETS["bar_mitzvah"])
+    matches = [r for r in rows if r.get("פרשה") == parsha]
+    names = [f"{r.get('שם פרטי', '')} {r.get('שם משפחה', '')}".strip() for r in matches]
+    print(f"Aliyot for {parsha}: {names}")
+    return json.dumps(names, ensure_ascii=False) if names else "אין עליות לפרשה זו"
+
+
+async def get_anim_zmirot(ctx: RunContext[bool], parsha: str) -> str:
+    """Get the boy who leads anim zmirot for the given parsha name (e.g. ויקרא)."""
+    rows = await _fetch_sheet(SHEETS["anim_zmirot"])
+    for r in rows:
+        if r.get("פרשה") == parsha:
+            name = r.get("שם הילד", "")
+            print(f"Anim zmirot for {parsha}: {name}")
+            return name
+    print(f"No anim zmirot found for {parsha}")
+    return "לא נמצא"
 
 
 async def get_minhagim(ctx: RunContext[bool]) -> str:
@@ -158,20 +168,16 @@ def _get_agent():
         _agent = Agent(
             "google-gla:gemini-2.5-flash",
             deps_type=bool,
-            tools=[get_sheet_data, get_minhagim, get_shabbat_times, send_whatsapp],
+            tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot, send_whatsapp],
             system_prompt=(
                 "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
                 "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
-                "2. Use get_sheet_data with sheet_name='bar_mitzvah' to read the members spreadsheet.\n"
-                "   The sheet is sorted by parsha. Column 'פרשה' has the parsha name.\n"
-                "   Find ALL rows where פרשה matches the upcoming parsha(s). These members get an aliyah.\n"
-                "   Use columns שם פרטי (first name) and שם משפחה (family name).\n"
-                "3. Use get_sheet_data with sheet_name='anim_zmirot' to find which boy leads אנעים זמירות.\n"
-                "   Sorted by parsha — find the row matching the upcoming parsha.\n"
+                "2. Use get_aliyot with the parsha name to get members who get an aliyah.\n"
+                "3. Use get_anim_zmirot with the parsha name to get the boy who leads אנעים זמירות.\n"
                 "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
                 "5. Compose a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
                 "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
-                "   b) דינים ומנהגים section: key dinim for the Shabbat(ot)\n"
+                "   b) דינים ומנהגים section: key dinim for THIS Shabbat only\n"
                 "   c) עליות section: list of names who get an aliyah\n"
                 "   d) אנעים זמירות: the boy's name\n"
                 "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
@@ -186,8 +192,9 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
     agent = _get_agent()
     today = datetime.now().strftime("%Y-%m-%d")
     prompt = (
-        f"Today is {today}. Please look up minhagim, shabbat times, and bar mitzvah aliyot "
-        f"for the next {weeks_ahead} week(s) of Shabbat, then compose and send the message via send_whatsapp."
+        f"Today is {today}. Prepare the weekly message for the upcoming Shabbat only "
+        f"(the next {weeks_ahead} Shabbat(ot)). "
+        f"Get times, aliyot, anim zmirot, and minhagim, then compose and send via send_whatsapp."
     )
     try:
         result = await agent.run(
