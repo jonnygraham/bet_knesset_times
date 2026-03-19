@@ -62,8 +62,13 @@ async def get_sheet_data(ctx: RunContext[bool], sheet_name: str) -> str:
         return json.dumps({"error": "Could not parse Google Sheets response"})
     data = json.loads(match.group(1))
     cols = [c.get("label", "") for c in data["table"]["cols"]]
+    all_rows = data["table"]["rows"]
+    # If column labels are empty, use first data row as headers
+    if all(not c for c in cols) and all_rows:
+        cols = [(cell["v"] if cell else "") for cell in all_rows[0]["c"]]
+        all_rows = all_rows[1:]
     rows = []
-    for row in data["table"]["rows"]:
+    for row in all_rows:
         rows.append({cols[i]: (cell["v"] if cell else None) for i, cell in enumerate(row["c"])})
     return json.dumps(rows, ensure_ascii=False)
 
