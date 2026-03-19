@@ -71,16 +71,12 @@ async def get_aliyot(ctx: RunContext[bool], parsha: str) -> str:
     return json.dumps(names, ensure_ascii=False) if names else "אין עליות לפרשה זו"
 
 
-async def get_anim_zmirot(ctx: RunContext[bool], parsha: str) -> str:
-    """Get the boy who leads anim zmirot for the given parsha name (e.g. ויקרא)."""
+async def get_anim_zmirot(ctx: RunContext[bool]) -> str:
+    """Get the full anim zmirot schedule. Returns all rows with פרשה and שם הילד columns.
+    Match the upcoming parsha to find the right boy. Note: parsha names may include
+    extras like 'צו - שבת הגדול' or holiday names — use fuzzy matching."""
     rows = await _fetch_sheet(SHEETS["anim_zmirot"])
-    for r in rows:
-        if r.get("פרשה") == parsha:
-            name = r.get("שם הילד", "")
-            print(f"Anim zmirot for {parsha}: {name}")
-            return name
-    print(f"No anim zmirot found for {parsha}")
-    return "לא נמצא"
+    return json.dumps(rows, ensure_ascii=False)
 
 
 async def get_minhagim(ctx: RunContext[bool]) -> str:
@@ -173,7 +169,8 @@ def _get_agent():
                 "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
                 "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
                 "2. Use get_aliyot with the parsha name to get members who get an aliyah.\n"
-                "3. Use get_anim_zmirot with the parsha name to get the boy who leads אנעים זמירות.\n"
+                "3. Use get_anim_zmirot to get the full schedule, then find the boy for this parsha.\n"
+                "   Parsha names may be fuzzy (e.g. 'צו - שבת הגדול' matches צו). Use best match.\n"
                 "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
                 "5. Compose a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
                 "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
