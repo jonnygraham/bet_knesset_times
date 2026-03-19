@@ -48,7 +48,8 @@ def get_param(name: str) -> str:
 async def get_sheet_data(ctx: RunContext[bool], sheet_name: str) -> str:
     """Read data from a named Google Sheet. Available sheets: bar_mitzvah, anim_zmirot.
     bar_mitzvah: members sorted by parsha who get an aliyah. Columns: שם משפחה, שם פרטי, פרשה.
-    anim_zmirot: one boy per parsha who leads anim zmirot. Sorted by parsha."""
+    anim_zmirot: one boy per parsha who leads anim zmirot. First row is headers (פרשה, שם הילד).
+    The column labels may be empty — use the first data row as headers."""
     sheet_id = SHEETS.get(sheet_name)
     if not sheet_id:
         return json.dumps({"error": f"Unknown sheet: {sheet_name}. Available: {list(SHEETS.keys())}"})
