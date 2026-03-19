@@ -14,6 +14,7 @@ from playwright.async_api import async_playwright
 
 SHEETS = {
     "bar_mitzvah": "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo",
+    "anim_zmirot": "10MS7JaKlz6ZHq6nD0P-G2oCpAxLTzzSBMClp-wc7rHI",
 }
 UNISYN_URL = "https://unisyn.org.il/%D7%9C%D7%95%D7%97-%D7%93%D7%99%D7%A0%D7%99%D7%9D-%D7%95%D7%9E%D7%A0%D7%94%D7%92%D7%99%D7%9D"
 PHONE = "+972543041655"
@@ -45,8 +46,9 @@ def get_param(name: str) -> str:
 
 
 async def get_sheet_data(ctx: RunContext[bool], sheet_name: str) -> str:
-    """Read data from a named Google Sheet. Available sheets: bar_mitzvah.
-    The bar_mitzvah sheet contains members' bar mitzvah dates (Hebrew birthday)."""
+    """Read data from a named Google Sheet. Available sheets: bar_mitzvah, anim_zmirot.
+    bar_mitzvah: members sorted by parsha who get an aliyah. Columns: שם משפחה, שם פרטי, פרשה.
+    anim_zmirot: one boy per parsha who leads anim zmirot. Sorted by parsha."""
     sheet_id = SHEETS.get(sheet_name)
     if not sheet_id:
         return json.dumps({"error": f"Unknown sheet: {sheet_name}. Available: {list(SHEETS.keys())}"})
@@ -122,6 +124,7 @@ def _split_message(message: str, limit: int = 450) -> list[str]:
 
 async def send_whatsapp(ctx: RunContext[bool], message: str) -> str:
     """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
+    message = message.replace("\\'", "'")
     print(f"Message to send:\n{message}")
     if not ctx.deps:
         print("send=false, skipping actual WhatsApp send")
@@ -151,19 +154,22 @@ def _get_agent():
             deps_type=bool,
             tools=[get_sheet_data, get_minhagim, get_shabbat_times, send_whatsapp],
             system_prompt=(
-                "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים (gabbays).\n"
+                "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
                 "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
                 "2. Use get_sheet_data with sheet_name='bar_mitzvah' to read the members spreadsheet.\n"
                 "   The sheet is sorted by parsha. Column 'פרשה' has the parsha name.\n"
                 "   Find ALL rows where פרשה matches the upcoming parsha(s). These members get an aliyah.\n"
                 "   Use columns שם פרטי (first name) and שם משפחה (family name).\n"
-                "3. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
-                "4. Compose a WhatsApp message in Hebrew for the Gabbays with this EXACT structure:\n"
+                "3. Use get_sheet_data with sheet_name='anim_zmirot' to find which boy leads אנעים זמירות.\n"
+                "   Sorted by parsha — find the row matching the upcoming parsha.\n"
+                "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
+                "5. Compose a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
                 "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
                 "   b) דינים ומנהגים section: key dinim for the Shabbat(ot)\n"
                 "   c) עליות section: list of names who get an aliyah\n"
+                "   d) אנעים זמירות: the boy's name\n"
                 "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
-                "5. Use send_whatsapp to send the composed message.\n"
+                "6. Use send_whatsapp to send the composed message.\n"
                 "Keep the message concise and practical."
             ),
         )
