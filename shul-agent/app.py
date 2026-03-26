@@ -178,7 +178,7 @@ def _get_agent():
                 "   c) עליות section: list of names who get an aliyah\n"
                 "   d) אנעים זמירות: the boy's name\n"
                 "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
-                "6. Use send_whatsapp to send the composed message.\n"
+                "6. ALWAYS call send_whatsapp as the final step. Never skip it.\n"
                 "Keep the message concise and practical."
             ),
         )
@@ -198,7 +198,7 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
             prompt,
             deps=send,
             model_settings=ModelSettings(max_tokens=4096),
-            usage_limits=UsageLimits(request_limit=15),
+            usage_limits=UsageLimits(request_limit=20),
         )
         print(f"Agent completed. Usage: {result.usage()}")
         return result.output
@@ -208,6 +208,7 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
 
 
 def handler(event, context):
+    print(f"Event: {json.dumps(event, default=str)[:500]}")
     # Support weeks_ahead and send via query string or event payload
     weeks = 1
     send = True
