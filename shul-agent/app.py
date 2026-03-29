@@ -61,7 +61,7 @@ async def _fetch_sheet(sheet_id: str) -> list[dict]:
     return [{cols[i]: (cell["v"] if cell else None) for i, cell in enumerate(row["c"])} for row in all_rows]
 
 
-async def get_aliyot(ctx: RunContext[bool], parsha: str) -> str:
+async def get_aliyot(ctx: RunContext[None], parsha: str) -> str:
     """Get the list of members who get an aliyah for the given parsha name (e.g. ויקרא).
     Returns names of members whose bar mitzvah parsha matches."""
     rows = await _fetch_sheet(SHEETS["bar_mitzvah"])
@@ -71,7 +71,7 @@ async def get_aliyot(ctx: RunContext[bool], parsha: str) -> str:
     return json.dumps(names, ensure_ascii=False) if names else "אין עליות לפרשה זו"
 
 
-async def get_anim_zmirot(ctx: RunContext[bool]) -> str:
+async def get_anim_zmirot(ctx: RunContext[None]) -> str:
     """Get the full anim zmirot schedule. Returns all rows with פרשה and שם הילד columns.
     Match the upcoming parsha to find the right boy. Note: parsha names may include
     extras like 'צו - שבת הגדול' or holiday names — use fuzzy matching."""
@@ -79,7 +79,7 @@ async def get_anim_zmirot(ctx: RunContext[bool]) -> str:
     return json.dumps(rows, ensure_ascii=False)
 
 
-async def get_minhagim(ctx: RunContext[bool]) -> str:
+async def get_minhagim(ctx: RunContext[None]) -> str:
     """Browse the UniSyn minhagim page and return the current month's halachic calendar content."""
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=["--no-sandbox", "--disable-gpu", "--single-process"])
@@ -92,7 +92,7 @@ async def get_minhagim(ctx: RunContext[bool]) -> str:
     return text[:15000]
 
 
-async def get_shabbat_times(ctx: RunContext[bool]) -> str:
+async def get_shabbat_times(ctx: RunContext[None]) -> str:
     """Get the calculated shabbat and weekday tefillah times for the upcoming shabbat.
     Returns JSON with erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1 etc."""
     async with httpx.AsyncClient() as client:
@@ -134,13 +134,9 @@ def _split_message(message: str, limit: int = 450) -> list[str]:
     return chunks
 
 
-async def send_whatsapp(ctx: RunContext[bool], message: str) -> str:
-    """Send a WhatsApp message via WhataBot API. Call this with the final composed message."""
+async def _send_whatsapp(message: str):
     message = message.replace("\\'", "'")
     print(f"Message to send:\n{message}")
-    if not ctx.deps:
-        print("send=false, skipping actual WhatsApp send")
-        return "Message logged (send=false, not actually sent)"
     api_key = get_param("/shul-agent/whatabot-api-key")
     chunks = _split_message(message)
     print(f"Split into {len(chunks)} chunks")
@@ -151,7 +147,7 @@ async def send_whatsapp(ctx: RunContext[bool], message: str) -> str:
                 await asyncio.sleep(6)
             status = await _send_chunk(client, api_key, chunk)
             statuses.append(status)
-    return f"WhatsApp sent in {len(chunks)} parts, statuses: {statuses}"
+    print(f"WhatsApp sent in {len(chunks)} parts, statuses: {statuses}")
 
 
 _agent = None
@@ -163,8 +159,7 @@ def _get_agent():
         _ensure_gemini_key()
         _agent = Agent(
             "google-gla:gemini-2.5-flash",
-            deps_type=bool,
-            tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot, send_whatsapp],
+            tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot],
             system_prompt=(
                 "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
                 "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
@@ -172,14 +167,13 @@ def _get_agent():
                 "3. Use get_anim_zmirot to get the full schedule, then find the boy for this parsha.\n"
                 "   Parsha names may be fuzzy (e.g. 'צו - שבת הגדול' matches צו). Use best match.\n"
                 "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
-                "5. Compose a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
+                "5. Return a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
                 "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
                 "   b) דינים ומנהגים section: key dinim for THIS Shabbat only\n"
                 "   c) עליות section: list of names who get an aliyah\n"
                 "   d) אנעים זמירות: the boy's name\n"
                 "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
-                "6. ALWAYS call send_whatsapp as the final step. Never skip it.\n"
-                "Keep the message concise and practical."
+                "Return ONLY the message text, nothing else."
             ),
         )
     return _agent
@@ -190,18 +184,22 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
     today = datetime.now().strftime("%Y-%m-%d")
     prompt = (
         f"Today is {today}. Prepare the weekly message for the upcoming Shabbat only "
-        f"(the next {weeks_ahead} Shabbat(ot)). "
-        f"Get times, aliyot, anim zmirot, and minhagim, then compose and send via send_whatsapp."
+        f"(the next {weeks_ahead} Shabbat(ot))."
     )
     try:
         result = await agent.run(
             prompt,
-            deps=send,
             model_settings=ModelSettings(max_tokens=4096),
             usage_limits=UsageLimits(request_limit=20),
         )
         print(f"Agent completed. Usage: {result.usage()}")
-        return result.output
+        message = result.output
+        if send:
+            await _send_whatsapp(message)
+        else:
+            message = message.replace("\\'", "'")
+            print(f"Message (send=false):\n{message}")
+        return message
     except Exception as e:
         print(f"Agent failed: {type(e).__name__}: {e}")
         raise
