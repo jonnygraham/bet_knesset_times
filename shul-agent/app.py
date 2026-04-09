@@ -209,10 +209,10 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
                 )
                 print(f"Agent completed ({model}). Usage: {result.usage()}")
                 message = result.output
+                message = message.replace("\\'", "'").replace('\\"', '"')
                 if send:
                     await _send_whatsapp(message)
                 else:
-                    message = message.replace("\\'", "'").replace('\\"', '"')
                     print(f"Message (send=false):\n{message}")
                 return message
             except Exception as e:
