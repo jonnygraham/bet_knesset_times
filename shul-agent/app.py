@@ -135,7 +135,7 @@ def _split_message(message: str, limit: int = 450) -> list[str]:
 
 
 async def _send_whatsapp(message: str):
-    message = message.replace("\\'", "'")
+    message = message.replace("\\'", "'").replace('\\"', '"')
     print(f"Message to send:\n{message}")
     api_key = get_param("/shul-agent/whatabot-api-key")
     chunks = _split_message(message)
@@ -169,11 +169,20 @@ def _get_agent(model: str = MODELS[0]):
             "   Parsha names may be fuzzy (e.g. 'צו - שבת הגדול' matches צו). Use best match.\n"
             "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
             "5. Return a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
-            "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
-            "   b) דינים ומנהגים section: key dinim for THIS Shabbat only\n"
-            "   c) עליות section: list of names who get an aliyah\n"
-            "   d) אנעים זמירות: the boy's name\n"
+            "   a) *זמני תפילות* section with these EXACT labels:\n"
+            "      מנחה וקבלת שבת: {erev_mincha}\n"
+            "      מנחה שבת: {day_mincha_2}\n"
+            "      ערבית מוצאי שבת: {motzash_arvit}\n"
+            "      מנחה (ימי חול): {week_mincha}\n"
+            "      ערבית (ימי חול): {week_arvit_1}\n"
+            "   b) *דינים ומנהגים* section: key dinim for THIS Shabbat only\n"
+            "   c) If this is שבת מברכים, add a separate *ברכת החודש* section stating:\n"
+            "      which month, which day(s) it falls on, and the מולד (exact time).\n"
+            "      Look up the molad from the minhagim page.\n"
+            "   d) *עליות לפרשת בר מצוה* section: list of names\n"
+            "   e) *אנעים זמירות*: the boy's name\n"
             "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
+            "   Do NOT escape quotes. Write \" not \\\".\n"
             "Return ONLY the message text, nothing else."
         ),
     )
@@ -203,7 +212,7 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
                 if send:
                     await _send_whatsapp(message)
                 else:
-                    message = message.replace("\\'", "'")
+                    message = message.replace("\\'", "'").replace('\\"', '"')
                     print(f"Message (send=false):\n{message}")
                 return message
             except Exception as e:
