@@ -153,7 +153,7 @@ async def _send_whatsapp(message: str):
 _agent = None
 
 
-MODELS = ["google-gla:gemini-2.5-flash", "google-gla:gemini-2.0-flash-001"]
+MODELS = ["google-gla:gemini-2.5-flash", "google-gla:gemini-2.5-flash-lite"]
 
 
 def _get_agent(model: str = MODELS[0]):
