@@ -186,23 +186,31 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
         f"Today is {today}. Prepare the weekly message for the upcoming Shabbat only "
         f"(the next {weeks_ahead} Shabbat(ot))."
     )
-    try:
-        result = await agent.run(
-            prompt,
-            model_settings=ModelSettings(max_tokens=4096),
-            usage_limits=UsageLimits(request_limit=20),
-        )
-        print(f"Agent completed. Usage: {result.usage()}")
-        message = result.output
-        if send:
-            await _send_whatsapp(message)
-        else:
-            message = message.replace("\\'", "'")
-            print(f"Message (send=false):\n{message}")
-        return message
-    except Exception as e:
-        print(f"Agent failed: {type(e).__name__}: {e}")
-        raise
+    last_err = None
+    for attempt in range(3):
+        try:
+            if attempt > 0:
+                await asyncio.sleep(10 * attempt)
+                print(f"Retry attempt {attempt + 1}")
+            result = await agent.run(
+                prompt,
+                model_settings=ModelSettings(max_tokens=4096),
+                usage_limits=UsageLimits(request_limit=20),
+            )
+            print(f"Agent completed. Usage: {result.usage()}")
+            message = result.output
+            if send:
+                await _send_whatsapp(message)
+            else:
+                message = message.replace("\\'", "'")
+                print(f"Message (send=false):\n{message}")
+            return message
+        except Exception as e:
+            last_err = e
+            print(f"Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
+            if "503" not in str(e) and "429" not in str(e):
+                raise
+    raise last_err
 
 
 def handler(event, context):
