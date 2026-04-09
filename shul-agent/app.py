@@ -153,63 +153,64 @@ async def _send_whatsapp(message: str):
 _agent = None
 
 
-def _get_agent():
-    global _agent
-    if _agent is None:
-        _ensure_gemini_key()
-        _agent = Agent(
-            "google-gla:gemini-2.5-flash",
-            tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot],
-            system_prompt=(
-                "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
-                "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
-                "2. Use get_aliyot with the parsha name to get members who get an aliyah.\n"
-                "3. Use get_anim_zmirot to get the full schedule, then find the boy for this parsha.\n"
-                "   Parsha names may be fuzzy (e.g. 'צו - שבת הגדול' matches צו). Use best match.\n"
-                "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
-                "5. Return a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
-                "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
-                "   b) דינים ומנהגים section: key dinim for THIS Shabbat only\n"
-                "   c) עליות section: list of names who get an aliyah\n"
-                "   d) אנעים זמירות: the boy's name\n"
-                "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
-                "Return ONLY the message text, nothing else."
-            ),
-        )
-    return _agent
+MODELS = ["google-gla:gemini-2.5-flash", "google-gla:gemini-2.0-flash"]
+
+
+def _get_agent(model: str = MODELS[0]):
+    _ensure_gemini_key()
+    return Agent(
+        model,
+        tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot],
+        system_prompt=(
+            "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
+            "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
+            "2. Use get_aliyot with the parsha name to get members who get an aliyah.\n"
+            "3. Use get_anim_zmirot to get the full schedule, then find the boy for this parsha.\n"
+            "   Parsha names may be fuzzy (e.g. 'צו - שבת הגדול' matches צו). Use best match.\n"
+            "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
+            "5. Return a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
+            "   a) זמני תפילות section: erev_mincha, day_mincha_2, motzash_arvit, week_mincha, week_arvit_1\n"
+            "   b) דינים ומנהגים section: key dinim for THIS Shabbat only\n"
+            "   c) עליות section: list of names who get an aliyah\n"
+            "   d) אנעים זמירות: the boy's name\n"
+            "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
+            "Return ONLY the message text, nothing else."
+        ),
+    )
 
 
 async def _run(weeks_ahead: int = 1, send: bool = True):
-    agent = _get_agent()
     today = datetime.now().strftime("%Y-%m-%d")
     prompt = (
         f"Today is {today}. Prepare the weekly message for the upcoming Shabbat only "
         f"(the next {weeks_ahead} Shabbat(ot))."
     )
     last_err = None
-    for attempt in range(3):
-        try:
-            if attempt > 0:
-                await asyncio.sleep(10 * attempt)
-                print(f"Retry attempt {attempt + 1}")
-            result = await agent.run(
-                prompt,
-                model_settings=ModelSettings(max_tokens=4096),
-                usage_limits=UsageLimits(request_limit=20),
-            )
-            print(f"Agent completed. Usage: {result.usage()}")
-            message = result.output
-            if send:
-                await _send_whatsapp(message)
-            else:
-                message = message.replace("\\'", "'")
-                print(f"Message (send=false):\n{message}")
-            return message
-        except Exception as e:
-            last_err = e
-            print(f"Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
-            if "503" not in str(e) and "429" not in str(e):
-                raise
+    for model in MODELS:
+        for attempt in range(2):
+            try:
+                if attempt > 0:
+                    await asyncio.sleep(15)
+                print(f"Trying {model} (attempt {attempt + 1})")
+                agent = _get_agent(model)
+                result = await agent.run(
+                    prompt,
+                    model_settings=ModelSettings(max_tokens=4096),
+                    usage_limits=UsageLimits(request_limit=20),
+                )
+                print(f"Agent completed ({model}). Usage: {result.usage()}")
+                message = result.output
+                if send:
+                    await _send_whatsapp(message)
+                else:
+                    message = message.replace("\\'", "'")
+                    print(f"Message (send=false):\n{message}")
+                return message
+            except Exception as e:
+                last_err = e
+                print(f"{model} attempt {attempt + 1} failed: {type(e).__name__}: {e}")
+                if "503" not in str(e) and "429" not in str(e):
+                    break  # non-transient error, try next model
     raise last_err
 
 
