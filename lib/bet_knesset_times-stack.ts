@@ -54,34 +54,20 @@ export class BetKnessetTimesStack extends Stack {
 
     docGenHandler.grantInvoke(weeklyDocGenHandler);
  
-    const layer = lambda.LayerVersion.fromLayerVersionArn(this, 'PuppeteerLayer',
-      'arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:102'
-    );
-
     const timesUploaderHandler = new lambda_nodejs.NodejsFunction(this, "TimesUploader", {
       runtime: lambda.Runtime.NODEJS_22_X,
       depsLockFilePath: './package-lock.json', 
       entry: './dist/src/timesFileGenerator.js',
       handler: "handler",
-      timeout: Duration.seconds(120),
-      memorySize: 1024, // Minimum for Chromium
-      bundling: {
-        nodeModules: ['puppeteer-core'],
-      },
+      timeout: Duration.seconds(60),
       environment: {
         BUCKET: bucket.bucketName
       },
-      layers: [layer]
     });
 
     const param = ssm.StringParameter.fromSecureStringParameterAttributes(this, `ParameterCreds`, {
       parameterName: 'mygabay_creds'});
     param.grantRead(timesUploaderHandler.role!);
-    ['mygabay_eventValidation','mygabay_viewstate_part1','mygabay_viewstate_part2'].forEach(paramName => {
-        const param = ssm.StringParameter.fromStringParameterAttributes(this, `Parameter${paramName}`, {
-          parameterName: paramName});
-        param.grantRead(timesUploaderHandler.role!);
-      });
 
     const timesUploaderHandlerLambdaUrl = timesUploaderHandler.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,

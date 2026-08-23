@@ -1,14 +1,11 @@
-// Modified Lambda function using Puppeteer for file upload
+// Lambda function uploading times via the SPA ButtonClicked REST API
 
 import { js2xml } from 'xml-js';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { calculateTimes } from './lookupTimes.js';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
-import fs from 'fs/promises';
-import path from 'path';
 
 const param_creds = 'mygabay_creds';
+const BASE_URL = 'https://mygabay.com/api/app/ButtonClicked';
 
 export const handler = async (event) => {
   const ssmClient = new SSMClient({ region: 'us-east-1' });
@@ -24,69 +21,60 @@ export const handler = async (event) => {
     console.log('Posting weekday times');
     xml = prepareWeekdayTimes(timesData);
     filename = 'tfilot.xml';
-    redirectUrl = 'https://mygabay.com/TfilaTimes/ShabatTimes.aspx';
+    redirectUrl = 'https://mygabay.com/DigitalBoardWeekdayPrayers';
   } else {
     console.log('Posting Shabbat times');
     xml = prepareShabbatTimes(timesData);
     filename = 'tfilotSH.xml';
-    redirectUrl = 'https://mygabay.com/TfilaTimes/HolTimes.aspx';
+    redirectUrl = 'https://mygabay.com/DigitalBoardShabbatPrayers';
   }
 
-  await uploadViaPuppeteer(xml, filename, creds);
+  await uploadViaApi(xml, filename, creds);
 
   return {
-    statusCode: 302,
-    headers: { Location: redirectUrl },
-    body: null,
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ success: true, filename, redirectUrl }),
   };
 };
 
-async function uploadViaPuppeteer(xmlString, filename, creds) {
-  const filePath = `/tmp/${filename}`;
-  await fs.writeFile(filePath, xmlString);
+async function uploadViaApi(xmlString, filename, creds) {
+  async function postBtn(button, data, appToken) {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-App-State': appToken || '',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+      },
+      body: JSON.stringify({ button, data, app: appToken || '' })
+    });
+    if (!res.ok) {
+      throw new Error(`mygabay API error ${res.status}: ${await res.text()}`);
+    }
+    return await res.json();
+  }
 
-  console.log("Chromium executable path:"+await chromium.executablePath("https://github.com/Sparticuz/chromium/releases/download/v137.0.1/chromium-v137.0.1-pack.x64.tar"));
+  // 1. Hello handshake -> obtain anonymous app state token
+  const helloRes = await postBtn('Hello', null, '');
+  const initialApp = helloRes.app || '';
 
-  const viewport = {
-    deviceScaleFactor: 1,
-    hasTouch: false,
-    height: 1080,
-    isLandscape: true,
-    isMobile: false,
-    width: 1920,
+  // 2. Login
+  const loginData = {
+    username: creds.userName || creds.username,
+    password: creds.password,
+    returnMethod: 'Hello',
+    returnData: '{}'
   };
+  const loginRes = await postBtn('Login', loginData, initialApp);
+  const loggedInApp = loginRes.app || initialApp;
 
-  const browser = await puppeteer.launch({
-    args: puppeteer.defaultArgs({ args: chromium.args, headless: "shell" }),
-    defaultViewport: viewport,
-    executablePath: await chromium.executablePath(),
-    headless: true
-  });
+  // 3. ShohamImport XML upload (base64 data URI)
+  const b64 = Buffer.from(xmlString, 'utf-8').toString('base64');
+  const files = JSON.stringify([{ name: filename, data: `data:text/xml;base64,${b64}` }]);
+  const uploadRes = await postBtn('ShohamImportSave', { files }, loggedInApp);
 
-  const page = await browser.newPage();
-  await page.goto('https://mygabay.com/Login.aspx', { waitUntil: 'domcontentloaded' });
-  await page.type('#userName', creds.userName);
-  await page.type('#password', creds.password);
-
-  await page.evaluate(() => {
-    // @ts-ignore
-    (window as any).login();
-  });
-
-  await page.waitForNavigation({ waitUntil: 'networkidle2' });
-  await page.goto('https://mygabay.com/ImportTimes.aspx', { waitUntil: 'networkidle2' });
-
-  const fileInput = await page.$('input[type="file"]');
-  if (!fileInput) throw new Error('File input not found');
-  await fileInput.uploadFile(filePath);
-
-  await Promise.all([
-    page.click('input[name="ctl00$ContentPlaceHolder1$sendButton"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle2' }),
-  ]);
-
-  console.log('✅ Upload complete via Puppeteer');
-  await browser.close();
+  console.log(`✅ Upload complete for ${filename}:`, uploadRes.script || uploadRes.popUp || 'Success');
 }
 
 function convertToXML(data) {
