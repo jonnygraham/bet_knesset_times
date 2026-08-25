@@ -86,10 +86,15 @@ function isFastDay(events: string[], hm: string, hd: number): { name: string; is
 }
 
 export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
+  const shabbatDateStr = shabbat.format('YYYY-MM-DD');
   const sunday = shabbat.clone().add(1, 'day');
-  const friday = shabbat.clone().add(6, 'day');
+  const nextShabbat = shabbat.clone().add(7, 'day');
 
-  const hdates = await fetchHebcalHdates(sunday, friday);
+  const hdates = await fetchHebcalHdates(shabbat, nextShabbat);
+
+  const shabbatInfo = hdates[shabbatDateStr];
+  const shabbatEvents: string[] = shabbatInfo?.events || [];
+  const isShabbatMevarchim = shabbatEvents.some((e: string) => e.includes('Mevarchim'));
 
   const roshChodeshDays: string[] = [];
   const selichotDays: string[] = [];
@@ -165,6 +170,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   }
 
   return {
+    isShabbatMevarchim,
     hasRoshChodesh,
     roshChodeshDays,
     roshChodeshDaysStr,
@@ -357,9 +363,16 @@ export async function calculateTimes(params: any): Promise<any> {
   const fast_arvit = params.fast_arvit ?? weekHebrewInfo.fastArvit;
   const week_shacharit_fast = params.week_shacharit_fast ?? (is_tisha_bav ? "07:00, 08:30" : "06:05");
 
+  const is_shabbat_mevarchim = params.is_shabbat_mevarchim !== undefined
+    ? params.is_shabbat_mevarchim === "true" || params.is_shabbat_mevarchim === true
+    : weekHebrewInfo.isShabbatMevarchim;
+  const shabbat_mevarchim = is_shabbat_mevarchim ? "שבת מברכים" : undefined;
+
   const calculatedParams = {
     ...params,
     parsha: parsha,
+    is_shabbat_mevarchim: is_shabbat_mevarchim,
+    shabbat_mevarchim: shabbat_mevarchim,
     shabbat_special: params.shabbat_special ?? undefined,// calendar[shabbatDate].special,
     erev_mincha: params.erev_mincha ?? erev_mincha.format('HH:mm'),
     day_shacharit: params.day_shacharit ?? day_shacharit.format('HH:mm'),
