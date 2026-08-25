@@ -79,7 +79,7 @@ function isFastDay(events: string[], hm: string, hd: number): { name: string; is
   if (fastEvents.some((e) => e.includes('Tammuz') && (e.includes('Tzom') || e.includes('Fast') || e.includes('17') || e.includes('Seventeen'))) || (hm === 'Tammuz' && hd === 17)) {
     return { name: 'שבעה עשר בתמוז', is_tisha_bav: false };
   }
-  if (fastEvents.some((e) => e.includes("Tish'a B'Av") || e.includes("Tish’a B’Av")) || (hm === 'Av' and hd === 9)) {
+  if (fastEvents.some((e) => e.includes("Tish'a B'Av") || e.includes("Tish’a B’Av")) || (hm === 'Av' && hd === 9)) {
     return { name: 'תשעה באב', is_tisha_bav: true };
   }
   return null;
