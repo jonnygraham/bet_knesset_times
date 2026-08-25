@@ -18,12 +18,13 @@ export const handler = async (event) => {
     }
 
     var csv = '';
-    const headRow = 'תאריך,פרשה,מנחה ערב שבת,שחרית,סוף זמן שמע,מנחה גדולה,מנחה קטנה,ערבית מוצ״ש,מנחה חול,ערבית חול,ערבית חול 2,שחרית ר״ח\n';
+    const headRow = 'תאריך,פרשה,מנחה ערב שבת,שחרית,סוף זמן שמע,מנחה גדולה,מנחה קטנה,ערבית מוצ״ש,מנחה חול,ערבית חול,ערבית חול 2,שחרית ר״ח,סליחות\n';
 
     csv = headRow;
     for(const timesData of times) {
         const rhCol = timesData.has_rosh_chodesh ? `${timesData.rosh_chodesh_days_str} ${timesData.week_shacharit_rh}` : '';
-        const row = `${timesData.shabbat},${timesData.parsha},${timesData.erev_mincha},${timesData.day_shacharit},${timesData.sof_zman_shema},${timesData.day_mincha_1},${timesData.day_mincha_2},${timesData.motzash_arvit},${timesData.week_mincha},${timesData.week_arvit_1},${timesData.week_arvit_2},${rhCol}\n`;
+        const selichotCol = timesData.has_selichot ? `${timesData.selichot_days_str} ${timesData.week_selichot}` : '';
+        const row = `${timesData.shabbat},${timesData.parsha},${timesData.erev_mincha},${timesData.day_shacharit},${timesData.sof_zman_shema},${timesData.day_mincha_1},${timesData.day_mincha_2},${timesData.motzash_arvit},${timesData.week_mincha},${timesData.week_arvit_1},${timesData.week_arvit_2},${rhCol},${selichotCol}\n`;
         csv += row;
     }
 

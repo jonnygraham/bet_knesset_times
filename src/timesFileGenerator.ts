@@ -99,12 +99,15 @@ function range(start, end, length = end - start + 1) {
 const EMPTY_TIME_ROW = { text: '', time: '00:00', active: false };
 
 function prepareWeekdayTimes(times) {
+  const selichotText = times.has_selichot && times.selichot_days_str && times.selichot_days_str !== "א'-ו'"
+    ? `סליחות (${times.selichot_days_str})`
+    : 'סליחות';
   const rhText = times.has_rosh_chodesh && times.rosh_chodesh_days_str
     ? `שחרית ר"ח (${times.rosh_chodesh_days_str})`
     : 'שחרית ר"ח';
 
   const data = [
-    { text: 'סליחות', time: '05:55', active: false },
+    { text: selichotText, time: times.week_selichot || '05:55', active: Boolean(times.has_selichot) },
     { text: 'שחרית', time: times.week_shacharit_1 || '06:15', active: true },
     { text: rhText, time: times.week_shacharit_rh || '06:05', active: Boolean(times.has_rosh_chodesh) },
     { text: 'שחרית', time: times.week_shacharit_2 || '07:10', active: true },

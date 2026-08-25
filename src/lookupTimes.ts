@@ -34,6 +34,33 @@ async function fetchHebcalHdates(startDate: typeof Moment, endDate: typeof Momen
   }
 }
 
+async function getSelichotStartElulDay(hebrewYear: number): Promise<number> {
+  const nextHebrewYear = hebrewYear + 1;
+  const cacheKey = `tishrei_1_${nextHebrewYear}`;
+  if (hebcalCache[cacheKey] !== undefined) {
+    return hebcalCache[cacheKey];
+  }
+  const url = `https://www.hebcal.com/converter?cfg=json&hy=${nextHebrewYear}&hm=Tishrei&hd=1&h2g=1`;
+  console.log("Fetching Hebcal for 1 Tishrei: " + url);
+  try {
+    const result = await axios.get(url);
+    const { gy, gm, gd } = result.data;
+    const tishrei1Moment = Moment(`${gy}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`, 'YYYY-MM-DD');
+    const dayOfWeek = tishrei1Moment.day(); // 0=Sun, 1=Mon, 2=Tue, 4=Thu, 6=Sat
+    let startElulDay = 26;
+    if (dayOfWeek === 6) startElulDay = 24;
+    else if (dayOfWeek === 1) startElulDay = 22;
+    else if (dayOfWeek === 2) startElulDay = 21;
+    else if (dayOfWeek === 4) startElulDay = 26;
+
+    hebcalCache[cacheKey] = startElulDay;
+    return startElulDay;
+  } catch (err) {
+    console.error("Error fetching 1 Tishrei date:", err);
+    return 26;
+  }
+}
+
 export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   const sunday = shabbat.clone().add(1, 'day');
   const friday = shabbat.clone().add(6, 'day');
@@ -41,6 +68,9 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   const hdates = await fetchHebcalHdates(sunday, friday);
 
   const roshChodeshDays: string[] = [];
+  const selichotDays: string[] = [];
+  let elulSelichotCount = 0;
+  let aytSelichotCount = 0;
 
   for (let i = 0; i < 6; i++) {
     const curDate = sunday.clone().add(i, 'day');
@@ -50,21 +80,51 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
 
     const shortDay = SHORT_HEBREW_DAYS[i];
     const events: string[] = hdateInfo.events || [];
+    const hm: string = hdateInfo.hm || '';
+    const hd: number = hdateInfo.hd || 0;
+    const hy: number = hdateInfo.hy;
 
     // Check Rosh Chodesh
     const isRoshChodesh = events.some((e: string) => e.includes('Rosh Chodesh'));
     if (isRoshChodesh) {
       roshChodeshDays.push(shortDay);
     }
+
+    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva
+    let isSelichot = false;
+    if (hm === 'Elul') {
+      const startElulDay = await getSelichotStartElulDay(hy);
+      if (hd >= startElulDay && hd <= 29) {
+        isSelichot = true;
+        elulSelichotCount++;
+      }
+    } else if (hm === 'Tishrei') {
+      if (hd >= 3 && hd <= 9) {
+        isSelichot = true;
+        aytSelichotCount++;
+      }
+    }
+
+    if (isSelichot) {
+      selichotDays.push(shortDay);
+    }
   }
 
   const hasRoshChodesh = roshChodeshDays.length > 0;
   const roshChodeshDaysStr = formatDaysRange(roshChodeshDays);
 
+  const hasSelichot = selichotDays.length > 0;
+  const selichotDaysStr = formatDaysRange(selichotDays);
+  const defaultSelichotTime = (aytSelichotCount > 0 && elulSelichotCount === 0) ? '05:50' : '05:55';
+
   return {
     hasRoshChodesh,
     roshChodeshDays,
     roshChodeshDaysStr,
+    hasSelichot,
+    selichotDays,
+    selichotDaysStr,
+    defaultSelichotTime,
   };
 }
 
@@ -224,6 +284,14 @@ export async function calculateTimes(params: any): Promise<any> {
   const rosh_chodesh_days = weekHebrewInfo.roshChodeshDays;
   const rosh_chodesh_days_str = params.rosh_chodesh_days_str ?? weekHebrewInfo.roshChodeshDaysStr;
 
+  const has_selichot = params.has_selichot !== undefined
+    ? params.has_selichot === "true" || params.has_selichot === true
+    : weekHebrewInfo.hasSelichot;
+
+  const selichot_days = weekHebrewInfo.selichotDays;
+  const selichot_days_str = params.selichot_days_str ?? weekHebrewInfo.selichotDaysStr;
+  const week_selichot = params.week_selichot ?? weekHebrewInfo.defaultSelichotTime;
+
   const calculatedParams = {
     ...params,
     parsha: parsha,
@@ -243,6 +311,10 @@ export async function calculateTimes(params: any): Promise<any> {
     has_rosh_chodesh: has_rosh_chodesh,
     rosh_chodesh_days: rosh_chodesh_days,
     rosh_chodesh_days_str: rosh_chodesh_days_str,
+    week_selichot: week_selichot,
+    has_selichot: has_selichot,
+    selichot_days: selichot_days,
+    selichot_days_str: selichot_days_str,
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm'),
     week_arvit_2: "21:15"
