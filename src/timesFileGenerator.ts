@@ -99,9 +99,32 @@ function range(start, end, length = end - start + 1) {
 const EMPTY_TIME_ROW = { text: '', time: '00:00', active: false };
 
 function prepareWeekdayTimes(times) {
-  const selichotText = times.has_selichot && times.selichot_days_str && times.selichot_days_str !== "א'-ו'"
-    ? `סליחות (${times.selichot_days_str})`
-    : 'סליחות';
+  const isCholHaMoed = Boolean(times.has_chol_hamoed);
+  const isTishaBAv = Boolean(times.is_tisha_bav);
+  const hasRegularFast = Boolean(times.has_fast && !isTishaBAv);
+
+  let selichot1Text = 'סליחות';
+  let selichot1Time = times.week_selichot || '05:55';
+  let selichot1Active = Boolean(times.has_selichot);
+
+  let selichot2Text = '';
+  let selichot2Time = '00:00';
+  let selichot2Active = false;
+
+  if (times.has_tzom_gedaliah) {
+    selichot1Text = times.tzom_gedaliah_day_str ? `סליחות צום גדליה (${times.tzom_gedaliah_day_str})` : 'סליחות צום גדליה';
+    selichot1Time = times.tzom_gedaliah_selichot || '05:45';
+    selichot1Active = true;
+
+    if (times.has_other_selichot) {
+      selichot2Text = times.other_selichot_days_str ? `סליחות (${times.other_selichot_days_str})` : 'סליחות';
+      selichot2Time = times.week_selichot || '05:50';
+      selichot2Active = true;
+    }
+  } else if (times.has_selichot && times.selichot_days_str && times.selichot_days_str !== "א'-ו'") {
+    selichot1Text = `סליחות (${times.selichot_days_str})`;
+  }
+
   const rhText = times.has_rosh_chodesh && times.rosh_chodesh_days_str
     ? `שחרית ר"ח (${times.rosh_chodesh_days_str})`
     : 'שחרית ר"ח';
@@ -116,10 +139,7 @@ function prepareWeekdayTimes(times) {
 
   let shacharit3Text = 'שחרית יום ו';
   let shacharit3Time = times.week_shacharit_3 ? (times.week_shacharit_3.replace(/^יום ו\s*/, '')) : '08:30';
-  let shacharit3Active = true;
-
-  const isTishaBAv = Boolean(times.is_tisha_bav);
-  const hasRegularFast = Boolean(times.has_fast && !isTishaBAv);
+  let shacharit3Active = Boolean(times.week_shacharit_3);
 
   let fastShacharitText = times.fast_name ? `שחרית (${times.fast_name})` : 'שחרית צום';
   let fastShacharitTime = times.week_shacharit_fast || '06:05';
@@ -130,20 +150,30 @@ function prepareWeekdayTimes(times) {
     shacharit2Text = 'שחרית (תשעה באב)';
     shacharit2Time = '08:30';
     shacharit3Active = false;
+  } else if (isCholHaMoed) {
+    const chmLabel = times.chol_hamoed_days_str ? ` (${times.chol_hamoed_days_str})` : '';
+    shacharit1Text = `שחרית חוה"מ${chmLabel}`;
+    shacharit1Time = '07:00';
+    shacharit2Text = `שחרית חוה"מ${chmLabel}`;
+    shacharit2Time = '08:30';
+    shacharit3Active = false;
   }
 
+  const fastMinchaText = times.fast_name ? `מנחה (${times.fast_name})` : 'מנחה צום';
   const fastArvitText = times.fast_name ? `ערבית מוצאי ${times.fast_name}` : 'ערבית צאת הצום';
 
   const data = [
-    { text: selichotText, time: times.week_selichot || '05:55', active: Boolean(times.has_selichot) },
+    { text: selichot1Text, time: selichot1Time, active: selichot1Active },
+    ...(selichot2Active ? [{ text: selichot2Text, time: selichot2Time, active: true }] : []),
     { text: fastShacharitText, time: fastShacharitTime, active: hasRegularFast },
     { text: rhText, time: times.week_shacharit_rh || '06:05', active: Boolean(times.has_rosh_chodesh) },
     { text: shacharit1Text, time: shacharit1Time, active: shacharit1Active },
     { text: shacharit2Text, time: shacharit2Time, active: shacharit2Active },
     { text: shacharit3Text, time: shacharit3Time, active: shacharit3Active },
-    ...range(0, 2).map(() => EMPTY_TIME_ROW),
+    ...range(0, selichot2Active ? 1 : 2).map(() => EMPTY_TIME_ROW),
+    { text: fastMinchaText, time: times.fast_mincha || times.week_mincha, active: Boolean(times.has_fast) },
     { text: 'מנחה', time: times.week_mincha, active: true },
-    ...range(0, 4).map(() => EMPTY_TIME_ROW),
+    ...range(0, 3).map(() => EMPTY_TIME_ROW),
     { text: fastArvitText, time: times.fast_arvit || '00:00', active: Boolean(times.has_fast) },
     { text: 'ערבית', time: times.week_arvit_1, active: true },
     { text: 'שיעור דף יומי הרב ברוכים', time: '22:00', active: true },

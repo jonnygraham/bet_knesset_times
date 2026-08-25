@@ -63,28 +63,35 @@ async function getSelichotStartElulDay(hebrewYear: number): Promise<number> {
   }
 }
 
-function isFastDay(events: string[], hm: string, hd: number): { name: string; is_tisha_bav: boolean } | null {
+function isFastDay(events: string[], hm: string, hd: number): { name: string; is_tisha_bav: boolean; is_tzom_gedaliah: boolean } | null {
   // Exclude Yom Kippur
   if (events.some((e) => e.includes('Yom Kippur')) || (hm === 'Tishrei' && hd === 10)) {
     return null;
   }
   const fastEvents = events.filter((e) => !e.startsWith('Erev '));
   if (fastEvents.some((e) => e.includes('Gedaliah'))) {
-    return { name: 'צום גדליה', is_tisha_bav: false };
+    return { name: 'צום גדליה', is_tisha_bav: false, is_tzom_gedaliah: true };
   }
   if (fastEvents.some((e) => e.includes('Tevet') && (e.includes('Asara') || e.includes('Tenth') || e.includes('Fast') || e.includes('Tzom'))) || (hm === 'Tevet' && hd === 10)) {
-    return { name: 'עשרה בטבת', is_tisha_bav: false };
+    return { name: 'עשרה בטבת', is_tisha_bav: false, is_tzom_gedaliah: false };
   }
   if (fastEvents.some((e) => e.includes('Esther'))) {
-    return { name: 'תענית אסתר', is_tisha_bav: false };
+    return { name: 'תענית אסתר', is_tisha_bav: false, is_tzom_gedaliah: false };
   }
   if (fastEvents.some((e) => e.includes('Tammuz') && (e.includes('Tzom') || e.includes('Fast') || e.includes('17') || e.includes('Seventeen'))) || (hm === 'Tammuz' && hd === 17)) {
-    return { name: 'שבעה עשר בתמוז', is_tisha_bav: false };
+    return { name: 'שבעה עשר בתמוז', is_tisha_bav: false, is_tzom_gedaliah: false };
   }
   if (fastEvents.some((e) => e.includes("Tish'a B'Av") || e.includes("Tish’a B’Av")) || (hm === 'Av' && hd === 9)) {
-    return { name: 'תשעה באב', is_tisha_bav: true };
+    return { name: 'תשעה באב', is_tisha_bav: true, is_tzom_gedaliah: false };
   }
   return null;
+}
+
+function isCholHaMoedDay(events: string[], hm: string, hd: number): boolean {
+  if ((hm === 'Nisan' && hd >= 16 && hd <= 20) || (hm === 'Tishrei' && hd >= 16 && hd <= 21)) {
+    return true;
+  }
+  return events.some((e) => e.includes('CH’’M') || e.includes('Chol') || e.includes('Hoshana Raba') || e.includes('Hoshana Rabbah'));
 }
 
 export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
@@ -100,8 +107,12 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
 
   const roshChodeshDays: string[] = [];
   const selichotDays: string[] = [];
+  const otherSelichotDays: string[] = [];
   const fastDays: string[] = [];
-  let fastInfo: { name: string; is_tisha_bav: boolean; date: Moment } | null = null;
+  const cholHaMoedDays: string[] = [];
+  let fastInfo: { name: string; is_tisha_bav: boolean; is_tzom_gedaliah: boolean; date: Moment } | null = null;
+  let hasTzomGedaliah = false;
+  let tzomGedaliahDayStr = '';
   let elulSelichotCount = 0;
   let aytSelichotCount = 0;
 
@@ -123,24 +134,9 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
       roshChodeshDays.push(shortDay);
     }
 
-    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva (excluding 9 Tishrei / Erev Yom Kippur)
-    let isSelichot = false;
-    if (hm === 'Elul') {
-      const startElulDay = await getSelichotStartElulDay(hy);
-      if (hd >= startElulDay && hd <= 29) {
-        isSelichot = true;
-        elulSelichotCount++;
-      }
-    } else if (hm === 'Tishrei') {
-      // 3 to 8 Tishrei only (exclude 9 Tishrei / Erev Yom Kippur)
-      if (hd >= 3 && hd <= 8) {
-        isSelichot = true;
-        aytSelichotCount++;
-      }
-    }
-
-    if (isSelichot) {
-      selichotDays.push(shortDay);
+    // Check Chol HaMoed
+    if (isCholHaMoedDay(events, hm, hd)) {
+      cholHaMoedDays.push(shortDay);
     }
 
     // Check Fast Day
@@ -150,24 +146,62 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
       fastInfo = {
         name: fast.name,
         is_tisha_bav: fast.is_tisha_bav,
+        is_tzom_gedaliah: fast.is_tzom_gedaliah,
         date: curDate,
       };
+      if (fast.is_tzom_gedaliah) {
+        hasTzomGedaliah = true;
+        tzomGedaliahDayStr = shortDay;
+      }
+    }
+
+    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva (05:45 on Tzom Gedaliah, excluding 9 Tishrei / Erev Yom Kippur)
+    let isSelichot = false;
+    if (hm === 'Elul') {
+      const startElulDay = await getSelichotStartElulDay(hy);
+      if (hd >= startElulDay && hd <= 29) {
+        isSelichot = true;
+        elulSelichotCount++;
+        otherSelichotDays.push(shortDay);
+      }
+    } else if (hm === 'Tishrei') {
+      // 3 to 8 Tishrei only (exclude 9 Tishrei / Erev Yom Kippur)
+      if (hd >= 3 && hd <= 8) {
+        isSelichot = true;
+        aytSelichotCount++;
+        if (!fast || !fast.is_tzom_gedaliah) {
+          otherSelichotDays.push(shortDay);
+        }
+      }
+    }
+
+    if (isSelichot) {
+      selichotDays.push(shortDay);
     }
   }
 
   const hasRoshChodesh = roshChodeshDays.length > 0;
   const roshChodeshDaysStr = formatDaysRange(roshChodeshDays);
 
+  const hasCholHaMoed = cholHaMoedDays.length > 0;
+  const cholHaMoedDaysStr = formatDaysRange(cholHaMoedDays);
+
   const hasSelichot = selichotDays.length > 0;
   const selichotDaysStr = formatDaysRange(selichotDays);
   const defaultSelichotTime = (aytSelichotCount > 0 && elulSelichotCount === 0) ? '05:50' : '05:55';
+  const hasOtherSelichot = otherSelichotDays.length > 0;
+  const otherSelichotDaysStr = formatDaysRange(otherSelichotDays);
 
   const hasFast = fastDays.length > 0;
   const fastDaysStr = formatDaysRange(fastDays);
 
+  let fastMincha: string | undefined = undefined;
   let fastArvit: string | undefined = undefined;
   if (hasFast && fastInfo) {
     const fastShkia = await fetchTime(fastInfo.date, 'שקיעה מישורית');
+    const minchaMoment = fastShkia.clone().subtract(20, 'minute');
+    minchaMoment.subtract(minchaMoment.get('minute') % 5, 'minute'); // Round down to 5 minutes
+    fastMincha = minchaMoment.format('HH:mm');
     fastArvit = fastShkia.clone().add(18, 'minute').format('HH:mm');
   }
 
@@ -176,15 +210,24 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     hasRoshChodesh,
     roshChodeshDays,
     roshChodeshDaysStr,
+    hasCholHaMoed,
+    cholHaMoedDays,
+    cholHaMoedDaysStr,
     hasSelichot,
     selichotDays,
     selichotDaysStr,
     defaultSelichotTime,
+    hasTzomGedaliah,
+    tzomGedaliahDayStr,
+    tzomGedaliahSelichot: hasTzomGedaliah ? '05:45' : undefined,
+    hasOtherSelichot,
+    otherSelichotDaysStr,
     hasFast,
     fastName: fastInfo ? fastInfo.name : undefined,
     isTishaBAv: fastInfo ? fastInfo.is_tisha_bav : false,
     fastDays,
     fastDaysStr,
+    fastMincha,
     fastArvit,
   };
 }
@@ -353,6 +396,12 @@ export async function calculateTimes(params: any): Promise<any> {
   const selichot_days_str = params.selichot_days_str ?? weekHebrewInfo.selichotDaysStr;
   const week_selichot = params.week_selichot ?? weekHebrewInfo.defaultSelichotTime;
 
+  const has_chol_hamoed = params.has_chol_hamoed !== undefined
+    ? params.has_chol_hamoed === "true" || params.has_chol_hamoed === true
+    : weekHebrewInfo.hasCholHaMoed;
+  const chol_hamoed_days = weekHebrewInfo.cholHaMoedDays;
+  const chol_hamoed_days_str = params.chol_hamoed_days_str ?? weekHebrewInfo.cholHaMoedDaysStr;
+
   const has_fast = params.has_fast !== undefined
     ? params.has_fast === "true" || params.has_fast === true
     : weekHebrewInfo.hasFast;
@@ -362,13 +411,29 @@ export async function calculateTimes(params: any): Promise<any> {
     : weekHebrewInfo.isTishaBAv;
   const fast_days = weekHebrewInfo.fastDays;
   const fast_days_str = params.fast_days_str ?? weekHebrewInfo.fastDaysStr;
+  const fast_mincha = params.fast_mincha ?? weekHebrewInfo.fastMincha;
   const fast_arvit = params.fast_arvit ?? weekHebrewInfo.fastArvit;
   const week_shacharit_fast = params.week_shacharit_fast ?? (is_tisha_bav ? "07:00, 08:30" : "06:05");
+
+  const has_tzom_gedaliah = weekHebrewInfo.hasTzomGedaliah;
+  const tzom_gedaliah_day_str = weekHebrewInfo.tzomGedaliahDayStr;
+  const tzom_gedaliah_selichot = weekHebrewInfo.tzomGedaliahSelichot;
+  const has_other_selichot = weekHebrewInfo.hasOtherSelichot;
+  const other_selichot_days_str = weekHebrewInfo.otherSelichotDaysStr;
 
   const is_shabbat_mevarchim = params.is_shabbat_mevarchim !== undefined
     ? params.is_shabbat_mevarchim === "true" || params.is_shabbat_mevarchim === true
     : weekHebrewInfo.isShabbatMevarchim;
   const shabbat_mevarchim = is_shabbat_mevarchim ? "שבת מברכים" : undefined;
+
+  let defaultShacharit1 = "06:15";
+  let defaultShacharit2 = "07:10";
+  let defaultShacharit3 = "יום ו 08:30";
+  if (has_chol_hamoed || is_tisha_bav) {
+    defaultShacharit1 = "07:00";
+    defaultShacharit2 = "08:30";
+    defaultShacharit3 = "";
+  }
 
   const calculatedParams = {
     ...params,
@@ -384,22 +449,31 @@ export async function calculateTimes(params: any): Promise<any> {
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
     day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm'),
     motzash_arvit: motzash_arvit.format('HH:mm'),
-    week_shacharit_1: "06:15",
-    week_shacharit_2: "07:10",
-    week_shacharit_3: "יום ו 08:30",
+    week_shacharit_1: params.week_shacharit_1 ?? defaultShacharit1,
+    week_shacharit_2: params.week_shacharit_2 ?? defaultShacharit2,
+    week_shacharit_3: params.week_shacharit_3 ?? defaultShacharit3,
     week_shacharit_rh: params.week_shacharit_rh ?? "06:05",
     has_rosh_chodesh: has_rosh_chodesh,
     rosh_chodesh_days: rosh_chodesh_days,
     rosh_chodesh_days_str: rosh_chodesh_days_str,
+    has_chol_hamoed: has_chol_hamoed,
+    chol_hamoed_days: chol_hamoed_days,
+    chol_hamoed_days_str: chol_hamoed_days_str,
     week_selichot: week_selichot,
     has_selichot: has_selichot,
     selichot_days: selichot_days,
     selichot_days_str: selichot_days_str,
+    has_tzom_gedaliah: has_tzom_gedaliah,
+    tzom_gedaliah_day_str: tzom_gedaliah_day_str,
+    tzom_gedaliah_selichot: tzom_gedaliah_selichot,
+    has_other_selichot: has_other_selichot,
+    other_selichot_days_str: other_selichot_days_str,
     has_fast: has_fast,
     fast_name: fast_name,
     is_tisha_bav: is_tisha_bav,
     fast_days: fast_days,
     fast_days_str: fast_days_str,
+    fast_mincha: fast_mincha,
     fast_arvit: fast_arvit,
     week_shacharit_fast: week_shacharit_fast,
     week_mincha: week_mincha.format('HH:mm'),
