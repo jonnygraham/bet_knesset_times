@@ -99,12 +99,16 @@ function range(start, end, length = end - start + 1) {
 const EMPTY_TIME_ROW = { text: '', time: '00:00', active: false };
 
 function prepareWeekdayTimes(times) {
+  const rhText = times.has_rosh_chodesh && times.rosh_chodesh_days_str
+    ? `שחרית ר"ח (${times.rosh_chodesh_days_str})`
+    : 'שחרית ר"ח';
+
   const data = [
     { text: 'סליחות', time: '05:55', active: false },
-    { text: 'שחרית', time: '06:15', active: true },
-    { text: 'שחרית ר"ח', time: '06:05', active: false },
-    { text: 'שחרית', time: '07:10', active: true },
-    { text: 'שחרית יום ו', time: '08:30', active: true },
+    { text: 'שחרית', time: times.week_shacharit_1 || '06:15', active: true },
+    { text: rhText, time: times.week_shacharit_rh || '06:05', active: Boolean(times.has_rosh_chodesh) },
+    { text: 'שחרית', time: times.week_shacharit_2 || '07:10', active: true },
+    { text: 'שחרית יום ו', time: times.week_shacharit_3 ? (times.week_shacharit_3.replace(/^יום ו\s*/, '')) : '08:30', active: true },
     ...range(0, 3).map(() => EMPTY_TIME_ROW),
     { text: 'מנחה', time: times.week_mincha, active: true },
     ...range(0, 4).map(() => EMPTY_TIME_ROW),

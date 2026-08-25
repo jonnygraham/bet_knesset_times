@@ -1,7 +1,72 @@
-const Moment = require('moment');
-const axios = require('axios');
+import Moment from 'moment';
+import axios from 'axios';
 
-const timesCache = {}
+const timesCache = {};
+const hebcalCache: { [key: string]: any } = {};
+
+const SHORT_HEBREW_DAYS = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'"];
+
+function formatDaysRange(days: string[]): string {
+  if (!days || days.length === 0) return '';
+  const indices = days.map((d) => SHORT_HEBREW_DAYS.indexOf(d)).filter((idx) => idx !== -1);
+  if (indices.length >= 3 && indices.every((val, i) => i === 0 || val === indices[i - 1] + 1)) {
+    return `${days[0]}-${days[days.length - 1]}`;
+  }
+  return days.join(', ');
+}
+
+async function fetchHebcalHdates(startDate: typeof Moment, endDate: typeof Moment): Promise<any> {
+  const startStr = startDate.format('YYYY-MM-DD');
+  const endStr = endDate.format('YYYY-MM-DD');
+  const cacheKey = `${startStr}_${endStr}`;
+  if (hebcalCache[cacheKey]) {
+    return hebcalCache[cacheKey];
+  }
+  const url = `https://www.hebcal.com/converter?cfg=json&start=${startStr}&end=${endStr}&g2h=1`;
+  console.log("Fetching Hebcal: " + url);
+  try {
+    const result = await axios.get(url);
+    hebcalCache[cacheKey] = result.data?.hdates || {};
+    return hebcalCache[cacheKey];
+  } catch (err) {
+    console.error("Error fetching Hebcal dates:", err);
+    return {};
+  }
+}
+
+export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
+  const sunday = shabbat.clone().add(1, 'day');
+  const friday = shabbat.clone().add(6, 'day');
+
+  const hdates = await fetchHebcalHdates(sunday, friday);
+
+  const roshChodeshDays: string[] = [];
+
+  for (let i = 0; i < 6; i++) {
+    const curDate = sunday.clone().add(i, 'day');
+    const curDateStr = curDate.format('YYYY-MM-DD');
+    const hdateInfo = hdates[curDateStr];
+    if (!hdateInfo) continue;
+
+    const shortDay = SHORT_HEBREW_DAYS[i];
+    const events: string[] = hdateInfo.events || [];
+
+    // Check Rosh Chodesh
+    const isRoshChodesh = events.some((e: string) => e.includes('Rosh Chodesh'));
+    if (isRoshChodesh) {
+      roshChodeshDays.push(shortDay);
+    }
+  }
+
+  const hasRoshChodesh = roshChodeshDays.length > 0;
+  const roshChodeshDaysStr = formatDaysRange(roshChodeshDays);
+
+  return {
+    hasRoshChodesh,
+    roshChodeshDays,
+    roshChodeshDaysStr,
+  };
+}
 
 async function fetchPage(date: typeof Moment): Promise<string> {
   const dateString = date.format('YYYYMMDD');
@@ -150,6 +215,14 @@ export async function calculateTimes(params: any): Promise<any> {
 
   console.log("Weekday arvit: " + week_arvit_1);
 
+  const weekHebrewInfo = await fetchHebrewCalendarWeekInfo(shabbat);
+
+  const has_rosh_chodesh = params.has_rosh_chodesh !== undefined
+    ? params.has_rosh_chodesh === "true" || params.has_rosh_chodesh === true
+    : weekHebrewInfo.hasRoshChodesh;
+
+  const rosh_chodesh_days = weekHebrewInfo.roshChodeshDays;
+  const rosh_chodesh_days_str = params.rosh_chodesh_days_str ?? weekHebrewInfo.roshChodeshDaysStr;
 
   const calculatedParams = {
     ...params,
@@ -166,6 +239,10 @@ export async function calculateTimes(params: any): Promise<any> {
     week_shacharit_1: "06:15",
     week_shacharit_2: "07:10",
     week_shacharit_3: "יום ו 08:30",
+    week_shacharit_rh: params.week_shacharit_rh ?? "06:05",
+    has_rosh_chodesh: has_rosh_chodesh,
+    rosh_chodesh_days: rosh_chodesh_days,
+    rosh_chodesh_days_str: rosh_chodesh_days_str,
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm'),
     week_arvit_2: "21:15"
