@@ -85,16 +85,18 @@ Applies to weekdays of **Chol HaMoed Pesach** (16–20 Nisan) and **Chol HaMoed 
 
 ## 7. System Architecture & Distribution
 
-The system generates prayer times across 4 automated channels:
+The system generates prayer times across 5 automated channels:
 
 1. **Word Document Flyer (`resources/templates/shabbat.docx`)**: Printed weekly bulletin with conditional sections populated using `docxtemplater`.
-2. **MyGabay Digital Board (`src/timesFileGenerator.ts`)**: Generates 21-slot `ArrayOfTfila` XML schemas and uploads directly to the MyGabay SPA API.
-3. **REST JSON API (`src/timesJsonHandler.ts` / `src/lookupTimes.ts`)**: Programmatic endpoint used by the Shul WhatsApp AI agent and automations.
-4. **CSV Export (`src/timesCsvGenerator.ts`)**: Tabular export with UTF-8 BOM encoding for spreadsheet planning.
+2. **Markdown Format (`src/timesMdHandler.ts`)**: Plain Markdown output matching the flyer layout, ideal for chat apps, WhatsApp bots, and web views.
+3. **MyGabay Digital Board (`src/timesFileGenerator.ts`)**: Generates 21-slot `ArrayOfTfila` XML schemas and uploads directly to the MyGabay SPA API.
+4. **REST JSON API (`src/timesJsonHandler.ts` / `src/lookupTimes.ts`)**: Programmatic endpoint used by the Shul WhatsApp AI agent and automations.
+5. **CSV Export (`src/timesCsvGenerator.ts`)**: Tabular export with UTF-8 BOM encoding for spreadsheet planning.
 
 ### CloudFront Clean Endpoints
 All services are mapped under a unified CloudFront distribution:
 - `https://d1dv96azwhiqeg.cloudfront.net/times` $\rightarrow$ JSON API
+- `https://d1dv96azwhiqeg.cloudfront.net/md` $\rightarrow$ Markdown Formatted Times
 - `https://d1dv96azwhiqeg.cloudfront.net/docx` $\rightarrow$ Word Flyer Generator
 - `https://d1dv96azwhiqeg.cloudfront.net/csv` $\rightarrow$ CSV Generator
 - `https://d1dv96azwhiqeg.cloudfront.net/upload` $\rightarrow$ MyGabay Uploader

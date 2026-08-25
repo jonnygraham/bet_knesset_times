@@ -122,12 +122,26 @@ export class BetKnessetTimesStack extends Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
+    const timesMdHandler = new lambda_nodejs.NodejsFunction(this, "TimesMd", {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      depsLockFilePath: './package-lock.json',
+      entry: './dist/src/timesMdHandler.js',
+      handler: "handler",
+      timeout: Duration.seconds(30),
+    });
+
+    const timesMdUrl = timesMdHandler.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
     new CfnOutput(this, 'Times JSON URL', { value: timesJsonUrl.url, exportName: 'TimesJsonUrl' });
+    new CfnOutput(this, 'Times MD URL', { value: timesMdUrl.url, exportName: 'TimesMdUrl' });
     new CfnOutput(this, 'Times Uploader URL ', { value: timesUploaderHandlerLambdaUrl.url });
     new CfnOutput(this, 'Times CSV URL ', { value: timesCsvHandlerLambdaUrl.url });
 
     // CloudFront Distribution for single domain with clean path routing
     const jsonOrigin = new origins.FunctionUrlOrigin(timesJsonUrl);
+    const mdOrigin = new origins.FunctionUrlOrigin(timesMdUrl);
     const docxOrigin = new origins.FunctionUrlOrigin(weeklyDocGenLambdaUrl);
     const csvOrigin = new origins.FunctionUrlOrigin(timesCsvHandlerLambdaUrl);
     const uploaderOrigin = new origins.FunctionUrlOrigin(timesUploaderHandlerLambdaUrl);
@@ -153,6 +167,18 @@ export class BetKnessetTimesStack extends Stack {
         },
         '/json': {
           origin: jsonOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/md': {
+          origin: mdOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/markdown': {
+          origin: mdOrigin,
           allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
           cachePolicy: cacheDisabledPolicy,
           originRequestPolicy: defaultOriginRequestPolicy,
@@ -196,6 +222,9 @@ export class BetKnessetTimesStack extends Stack {
     });
     new CfnOutput(this, 'CloudFront Times JSON', {
       value: `https://${distribution.distributionDomainName}/times`,
+    });
+    new CfnOutput(this, 'CloudFront Times Markdown', {
+      value: `https://${distribution.distributionDomainName}/md`,
     });
     new CfnOutput(this, 'CloudFront Times DOCX', {
       value: `https://${distribution.distributionDomainName}/docx`,
