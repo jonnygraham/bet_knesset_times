@@ -106,19 +106,49 @@ function prepareWeekdayTimes(times) {
     ? `שחרית ר"ח (${times.rosh_chodesh_days_str})`
     : 'שחרית ר"ח';
 
+  let shacharit1Text = 'שחרית';
+  let shacharit1Time = times.week_shacharit_1 || '06:15';
+  let shacharit1Active = true;
+
+  let shacharit2Text = 'שחרית';
+  let shacharit2Time = times.week_shacharit_2 || '07:10';
+  let shacharit2Active = true;
+
+  let shacharit3Text = 'שחרית יום ו';
+  let shacharit3Time = times.week_shacharit_3 ? (times.week_shacharit_3.replace(/^יום ו\s*/, '')) : '08:30';
+  let shacharit3Active = true;
+
+  const isTishaBAv = Boolean(times.is_tisha_bav);
+  const hasRegularFast = Boolean(times.has_fast && !isTishaBAv);
+
+  let fastShacharitText = times.fast_name ? `שחרית (${times.fast_name})` : 'שחרית צום';
+  let fastShacharitTime = times.week_shacharit_fast || '06:05';
+
+  if (isTishaBAv) {
+    shacharit1Text = 'שחרית (תשעה באב)';
+    shacharit1Time = '07:00';
+    shacharit2Text = 'שחרית (תשעה באב)';
+    shacharit2Time = '08:30';
+    shacharit3Active = false;
+  }
+
+  const fastArvitText = times.fast_name ? `ערבית מוצאי ${times.fast_name}` : 'ערבית צאת הצום';
+
   const data = [
     { text: selichotText, time: times.week_selichot || '05:55', active: Boolean(times.has_selichot) },
-    { text: 'שחרית', time: times.week_shacharit_1 || '06:15', active: true },
+    { text: fastShacharitText, time: fastShacharitTime, active: hasRegularFast },
     { text: rhText, time: times.week_shacharit_rh || '06:05', active: Boolean(times.has_rosh_chodesh) },
-    { text: 'שחרית', time: times.week_shacharit_2 || '07:10', active: true },
-    { text: 'שחרית יום ו', time: times.week_shacharit_3 ? (times.week_shacharit_3.replace(/^יום ו\s*/, '')) : '08:30', active: true },
-    ...range(0, 3).map(() => EMPTY_TIME_ROW),
+    { text: shacharit1Text, time: shacharit1Time, active: shacharit1Active },
+    { text: shacharit2Text, time: shacharit2Time, active: shacharit2Active },
+    { text: shacharit3Text, time: shacharit3Time, active: shacharit3Active },
+    ...range(0, 2).map(() => EMPTY_TIME_ROW),
     { text: 'מנחה', time: times.week_mincha, active: true },
     ...range(0, 4).map(() => EMPTY_TIME_ROW),
+    { text: fastArvitText, time: times.fast_arvit || '00:00', active: Boolean(times.has_fast) },
     { text: 'ערבית', time: times.week_arvit_1, active: true },
     { text: 'ערבית', time: times.week_arvit_2, active: false },
     { text: 'שיעור דף יומי הרב ברוכים', time: '22:00', active: true },
-    ...range(0, 2).map(() => EMPTY_TIME_ROW),
+    ...range(0, 1).map(() => EMPTY_TIME_ROW),
   ];
   return convertToXML(data);
 }

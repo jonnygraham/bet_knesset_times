@@ -61,6 +61,30 @@ async function getSelichotStartElulDay(hebrewYear: number): Promise<number> {
   }
 }
 
+function isFastDay(events: string[], hm: string, hd: number): { name: string; is_tisha_bav: boolean } | null {
+  // Exclude Yom Kippur
+  if (events.some((e) => e.includes('Yom Kippur')) || (hm === 'Tishrei' && hd === 10)) {
+    return null;
+  }
+  const fastEvents = events.filter((e) => !e.startsWith('Erev '));
+  if (fastEvents.some((e) => e.includes('Gedaliah'))) {
+    return { name: 'צום גדליה', is_tisha_bav: false };
+  }
+  if (fastEvents.some((e) => e.includes('Tevet') && (e.includes('Asara') || e.includes('Tenth') || e.includes('Fast') || e.includes('Tzom'))) || (hm === 'Tevet' && hd === 10)) {
+    return { name: 'עשרה בטבת', is_tisha_bav: false };
+  }
+  if (fastEvents.some((e) => e.includes('Esther'))) {
+    return { name: 'תענית אסתר', is_tisha_bav: false };
+  }
+  if (fastEvents.some((e) => e.includes('Tammuz') && (e.includes('Tzom') || e.includes('Fast') || e.includes('17') || e.includes('Seventeen'))) || (hm === 'Tammuz' && hd === 17)) {
+    return { name: 'שבעה עשר בתמוז', is_tisha_bav: false };
+  }
+  if (fastEvents.some((e) => e.includes("Tish'a B'Av") || e.includes("Tish’a B’Av")) || (hm === 'Av' and hd === 9)) {
+    return { name: 'תשעה באב', is_tisha_bav: true };
+  }
+  return null;
+}
+
 export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   const sunday = shabbat.clone().add(1, 'day');
   const friday = shabbat.clone().add(6, 'day');
@@ -69,6 +93,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
 
   const roshChodeshDays: string[] = [];
   const selichotDays: string[] = [];
+  const fastDays: string[] = [];
+  let fastInfo: { name: string; is_tisha_bav: boolean; date: typeof Moment } | null = null;
   let elulSelichotCount = 0;
   let aytSelichotCount = 0;
 
@@ -90,7 +116,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
       roshChodeshDays.push(shortDay);
     }
 
-    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva
+    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva (excluding 9 Tishrei / Erev Yom Kippur)
     let isSelichot = false;
     if (hm === 'Elul') {
       const startElulDay = await getSelichotStartElulDay(hy);
@@ -99,7 +125,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
         elulSelichotCount++;
       }
     } else if (hm === 'Tishrei') {
-      if (hd >= 3 && hd <= 9) {
+      // 3 to 8 Tishrei only (exclude 9 Tishrei / Erev Yom Kippur)
+      if (hd >= 3 && hd <= 8) {
         isSelichot = true;
         aytSelichotCount++;
       }
@@ -107,6 +134,17 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
 
     if (isSelichot) {
       selichotDays.push(shortDay);
+    }
+
+    // Check Fast Day
+    const fast = isFastDay(events, hm, hd);
+    if (fast) {
+      fastDays.push(shortDay);
+      fastInfo = {
+        name: fast.name,
+        is_tisha_bav: fast.is_tisha_bav,
+        date: curDate,
+      };
     }
   }
 
@@ -117,6 +155,15 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   const selichotDaysStr = formatDaysRange(selichotDays);
   const defaultSelichotTime = (aytSelichotCount > 0 && elulSelichotCount === 0) ? '05:50' : '05:55';
 
+  const hasFast = fastDays.length > 0;
+  const fastDaysStr = formatDaysRange(fastDays);
+
+  let fastArvit: string | undefined = undefined;
+  if (hasFast && fastInfo) {
+    const fastShkia = await fetchTime(fastInfo.date, 'שקיעה מישורית');
+    fastArvit = fastShkia.clone().add(18, 'minute').format('HH:mm');
+  }
+
   return {
     hasRoshChodesh,
     roshChodeshDays,
@@ -125,6 +172,12 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
     selichotDays,
     selichotDaysStr,
     defaultSelichotTime,
+    hasFast,
+    fastName: fastInfo ? fastInfo.name : undefined,
+    isTishaBAv: fastInfo ? fastInfo.is_tisha_bav : false,
+    fastDays,
+    fastDaysStr,
+    fastArvit,
   };
 }
 
@@ -292,6 +345,18 @@ export async function calculateTimes(params: any): Promise<any> {
   const selichot_days_str = params.selichot_days_str ?? weekHebrewInfo.selichotDaysStr;
   const week_selichot = params.week_selichot ?? weekHebrewInfo.defaultSelichotTime;
 
+  const has_fast = params.has_fast !== undefined
+    ? params.has_fast === "true" || params.has_fast === true
+    : weekHebrewInfo.hasFast;
+  const fast_name = params.fast_name ?? weekHebrewInfo.fastName;
+  const is_tisha_bav = params.is_tisha_bav !== undefined
+    ? params.is_tisha_bav === "true" || params.is_tisha_bav === true
+    : weekHebrewInfo.isTishaBAv;
+  const fast_days = weekHebrewInfo.fastDays;
+  const fast_days_str = params.fast_days_str ?? weekHebrewInfo.fastDaysStr;
+  const fast_arvit = params.fast_arvit ?? weekHebrewInfo.fastArvit;
+  const week_shacharit_fast = params.week_shacharit_fast ?? (is_tisha_bav ? "07:00, 08:30" : "06:05");
+
   const calculatedParams = {
     ...params,
     parsha: parsha,
@@ -315,6 +380,13 @@ export async function calculateTimes(params: any): Promise<any> {
     has_selichot: has_selichot,
     selichot_days: selichot_days,
     selichot_days_str: selichot_days_str,
+    has_fast: has_fast,
+    fast_name: fast_name,
+    is_tisha_bav: is_tisha_bav,
+    fast_days: fast_days,
+    fast_days_str: fast_days_str,
+    fast_arvit: fast_arvit,
+    week_shacharit_fast: week_shacharit_fast,
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm'),
     week_arvit_2: "21:15"
