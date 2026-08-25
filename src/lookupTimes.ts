@@ -403,8 +403,7 @@ export async function calculateTimes(params: any): Promise<any> {
     fast_arvit: fast_arvit,
     week_shacharit_fast: week_shacharit_fast,
     week_mincha: week_mincha.format('HH:mm'),
-    week_arvit_1: week_arvit_1.format('HH:mm'),
-    week_arvit_2: "21:15"
+    week_arvit_1: week_arvit_1.format('HH:mm')
   }
 
   return calculatedParams;

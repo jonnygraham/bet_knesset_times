@@ -146,9 +146,8 @@ function prepareWeekdayTimes(times) {
     ...range(0, 4).map(() => EMPTY_TIME_ROW),
     { text: fastArvitText, time: times.fast_arvit || '00:00', active: Boolean(times.has_fast) },
     { text: 'ערבית', time: times.week_arvit_1, active: true },
-    { text: 'ערבית', time: times.week_arvit_2, active: false },
     { text: 'שיעור דף יומי הרב ברוכים', time: '22:00', active: true },
-    ...range(0, 1).map(() => EMPTY_TIME_ROW),
+    ...range(0, 2).map(() => EMPTY_TIME_ROW),
   ];
   return convertToXML(data);
 }
