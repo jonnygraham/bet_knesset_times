@@ -7,6 +7,8 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 
 export class BetKnessetTimesStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -123,6 +125,87 @@ export class BetKnessetTimesStack extends Stack {
     new CfnOutput(this, 'Times JSON URL', { value: timesJsonUrl.url, exportName: 'TimesJsonUrl' });
     new CfnOutput(this, 'Times Uploader URL ', { value: timesUploaderHandlerLambdaUrl.url });
     new CfnOutput(this, 'Times CSV URL ', { value: timesCsvHandlerLambdaUrl.url });
+
+    // CloudFront Distribution for single domain with clean path routing
+    const jsonOrigin = new origins.FunctionUrlOrigin(timesJsonUrl);
+    const docxOrigin = new origins.FunctionUrlOrigin(weeklyDocGenLambdaUrl);
+    const csvOrigin = new origins.FunctionUrlOrigin(timesCsvHandlerLambdaUrl);
+    const uploaderOrigin = new origins.FunctionUrlOrigin(timesUploaderHandlerLambdaUrl);
+    const docGenOrigin = new origins.FunctionUrlOrigin(docGenLambdaUrl);
+
+    const defaultOriginRequestPolicy = cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER;
+    const cacheDisabledPolicy = cloudfront.CachePolicy.CACHING_DISABLED;
+
+    const distribution = new cloudfront.Distribution(this, 'TimesDistribution', {
+      comment: 'Single CloudFront distribution for Bet Knesset Times endpoints',
+      defaultBehavior: {
+        origin: jsonOrigin,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+        cachePolicy: cacheDisabledPolicy,
+        originRequestPolicy: defaultOriginRequestPolicy,
+      },
+      additionalBehaviors: {
+        '/times': {
+          origin: jsonOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/json': {
+          origin: jsonOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/docx': {
+          origin: docxOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/flyer': {
+          origin: docxOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/csv': {
+          origin: csvOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/upload': {
+          origin: uploaderOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+        '/doc-gen': {
+          origin: docGenOrigin,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cacheDisabledPolicy,
+          originRequestPolicy: defaultOriginRequestPolicy,
+        },
+      },
+    });
+
+    new CfnOutput(this, 'CloudFront Domain URL', {
+      value: `https://${distribution.distributionDomainName}`,
+      description: 'Main CloudFront domain for all endpoints',
+    });
+    new CfnOutput(this, 'CloudFront Times JSON', {
+      value: `https://${distribution.distributionDomainName}/times`,
+    });
+    new CfnOutput(this, 'CloudFront Times DOCX', {
+      value: `https://${distribution.distributionDomainName}/docx`,
+    });
+    new CfnOutput(this, 'CloudFront Times CSV', {
+      value: `https://${distribution.distributionDomainName}/csv`,
+    });
+    new CfnOutput(this, 'CloudFront Times Upload', {
+      value: `https://${distribution.distributionDomainName}/upload`,
+    });
 
   }
 }
