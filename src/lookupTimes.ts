@@ -1,5 +1,7 @@
-import Moment from 'moment';
+import moment from 'moment';
 import axios from 'axios';
+
+type Moment = moment.Moment;
 
 const timesCache = {};
 const hebcalCache: { [key: string]: any } = {};
@@ -15,7 +17,7 @@ function formatDaysRange(days: string[]): string {
   return days.join(', ');
 }
 
-async function fetchHebcalHdates(startDate: typeof Moment, endDate: typeof Moment): Promise<any> {
+async function fetchHebcalHdates(startDate: Moment, endDate: Moment): Promise<any> {
   const startStr = startDate.format('YYYY-MM-DD');
   const endStr = endDate.format('YYYY-MM-DD');
   const cacheKey = `${startStr}_${endStr}`;
@@ -45,7 +47,7 @@ async function getSelichotStartElulDay(hebrewYear: number): Promise<number> {
   try {
     const result = await axios.get(url);
     const { gy, gm, gd } = result.data;
-    const tishrei1Moment = Moment(`${gy}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`, 'YYYY-MM-DD');
+    const tishrei1Moment = moment(`${gy}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`, 'YYYY-MM-DD');
     const dayOfWeek = tishrei1Moment.day(); // 0=Sun, 1=Mon, 2=Tue, 4=Thu, 6=Sat
     let startElulDay = 26;
     if (dayOfWeek === 6) startElulDay = 24;
@@ -85,7 +87,7 @@ function isFastDay(events: string[], hm: string, hd: number): { name: string; is
   return null;
 }
 
-export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
+export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
   const shabbatDateStr = shabbat.format('YYYY-MM-DD');
   const sunday = shabbat.clone().add(1, 'day');
   const nextShabbat = shabbat.clone().add(7, 'day');
@@ -99,7 +101,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   const roshChodeshDays: string[] = [];
   const selichotDays: string[] = [];
   const fastDays: string[] = [];
-  let fastInfo: { name: string; is_tisha_bav: boolean; date: typeof Moment } | null = null;
+  let fastInfo: { name: string; is_tisha_bav: boolean; date: Moment } | null = null;
   let elulSelichotCount = 0;
   let aytSelichotCount = 0;
 
@@ -187,7 +189,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: typeof Moment) {
   };
 }
 
-async function fetchPage(date: typeof Moment): Promise<string> {
+async function fetchPage(date: Moment): Promise<string> {
   const dateString = date.format('YYYYMMDD');
   console.log("Fetching times page for " + dateString);
   var pageString: string;
@@ -204,15 +206,15 @@ async function fetchPage(date: typeof Moment): Promise<string> {
   return pageString
 }
 
-export async function fetchTime(date: typeof Moment, timeName: string): Promise<typeof Moment> {
+export async function fetchTime(date: Moment, timeName: string): Promise<Moment> {
   let page = (await fetchPage(date)).split("\n");
   let r = new RegExp(`${timeName}[^\\d]*(\\d\\d:\\d\\d)`);
   console.log("Using regex " + r);
   return page.map((l: string) => l.match(r)).filter((l: RegExpMatchArray | null) => l)
-    .map((m: RegExpMatchArray | null) => Moment(m ? m[1] : null, "HH:mm"))[0];
+    .map((m: RegExpMatchArray | null) => moment(m ? m[1] : null, "HH:mm"))[0] as Moment;
 }
 
-export async function fetchParsha(date: typeof Moment): Promise<string> {
+export async function fetchParsha(date: Moment): Promise<string> {
   let pageString = await fetchPage(date);
   const r = /פרשת השבוע:\s*([\s\S]*?)\s*<\/div>/;
   console.log("Using regex " + r);
@@ -266,11 +268,11 @@ export async function calculateTimes(params: any): Promise<any> {
     "2023-09-02": { parsha: "כי תבוא" }
   };
 
-  const daysUntilSaturday = (6 - (Moment().day() + 1) % 7) % 7 + 1;
-//  const shabbat = Moment().add(6 - Moment().day(), 'day');
-  var shabbat = Moment().add(daysUntilSaturday, 'day');
+  const daysUntilSaturday = (6 - (moment().day() + 1) % 7) % 7 + 1;
+//  const shabbat = moment().add(6 - moment().day(), 'day');
+  var shabbat = moment().add(daysUntilSaturday, 'day');
   if (params.shabbat) {
-     shabbat = Moment(params.shabbat,"YYYY-MM-DD");
+     shabbat = moment(params.shabbat,"YYYY-MM-DD");
   }
   const shabbatDate = shabbat.format("YYYY-MM-DD");
   console.log("Shabbat date is " + shabbatDate);
@@ -281,7 +283,7 @@ export async function calculateTimes(params: any): Promise<any> {
 
   const shkia = params.shkia ?? (await fetchTime(shabbat, 'שקיעה מישורית')); //calendar[shabbatDate].shkia;
 
-  const shkiaMoment = Moment(shkia, "HH:mm");
+  const shkiaMoment = moment(shkia, "HH:mm");
   const erev_mincha = shkiaMoment.clone().subtract(14, 'minute');
   erev_mincha.subtract(erev_mincha.get('minute') % 5, 'minute'); // Round down to 5 minutes
 
@@ -290,8 +292,8 @@ export async function calculateTimes(params: any): Promise<any> {
   const sof_zman_shema = await fetchTime(shabbat, 'סוף זמן קריאת שמע גרא');
   //const dst = shkiaMoment.isDST();
 
-  const day_shacharit = Moment('08:00', 'HH:mm');
-  const day_mincha_1 = Moment('12:45', 'HH:mm');
+  const day_shacharit = moment('08:00', 'HH:mm');
+  const day_mincha_1 = moment('12:45', 'HH:mm');
   if (params.dst === "true") {
     day_shacharit.add(30, 'minute');
     day_mincha_1.add(30, 'minute');

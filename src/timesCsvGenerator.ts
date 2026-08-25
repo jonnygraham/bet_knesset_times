@@ -1,18 +1,18 @@
-import Moment from 'moment';
+import moment from 'moment';
 import { calculateTimes } from "./lookupTimes"
 
 export const handler = async (event) => {
     var times : any[] = [];
     const { from, to , ...params } = event.queryStringParameters;
     if (from > to) throw new Error(`from [${from}] must be before to [${to}]!`);
-    const nearestShabbat = Moment(from, "YYYY-MM-DD").day(6);  
+    const nearestShabbat = moment(from, "YYYY-MM-DD").day(6);  
     params.shabbat = nearestShabbat.format('YYYY-MM-DD');
     console.log("Starting from Shabbat "+params.shabbat);
     while (params.shabbat <= to) {
         const timesData = await calculateTimes(params);
         times.push(timesData);
         console.log(timesData);
-        const shabbatTs = Moment(params.shabbat,"YYYY-MM-DD");
+        const shabbatTs = moment(params.shabbat,"YYYY-MM-DD");
         shabbatTs.add(7, 'day');
         params.shabbat = shabbatTs.format('YYYY-MM-DD')
     }

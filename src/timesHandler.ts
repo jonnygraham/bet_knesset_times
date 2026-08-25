@@ -1,5 +1,3 @@
-import { Moment } from "moment";
-
 import { calculateTimes } from "./lookupTimes"
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 
