@@ -21,6 +21,8 @@ export function formatTimesMarkdown(times: any): string {
     `מנחה קטנה – ${times.day_mincha_2}`,
     `ערבית מוצאי שבת – ${times.motzash_arvit}`,
     'שבת שלום',
+    '',
+    'זמני תפילות ימי חול',
   ];
 
   // Weekday Times
