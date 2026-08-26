@@ -104,6 +104,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
   const shabbatInfo = hdates[shabbatDateStr];
   const shabbatEvents: string[] = shabbatInfo?.events || [];
   const isShabbatMevarchim = shabbatEvents.some((e: string) => e.includes('Mevarchim'));
+  const isShabbatCholHaMoedSukkot = (shabbatInfo?.hm === 'Tishrei' && shabbatInfo?.hd >= 16 && shabbatInfo?.hd <= 21) ||
+    shabbatEvents.some((e: string) => e.includes('Sukkot') && (e.includes('CH’’M') || e.includes('Chol')));
 
   const roshChodeshDays: string[] = [];
   const selichotDays: string[] = [];
@@ -246,6 +248,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     erevRoshHashanaDayStr,
     hasErevYomKippur,
     erevYomKippurDayStr,
+    isShabbatCholHaMoedSukkot,
   };
 }
 
@@ -352,10 +355,15 @@ export async function calculateTimes(params: any): Promise<any> {
   const sof_zman_shema = await fetchTime(shabbat, 'סוף זמן קריאת שמע גרא');
   //const dst = shkiaMoment.isDST();
 
+  const weekHebrewInfo = await fetchHebrewCalendarWeekInfo(shabbat);
+
   const day_shacharit = moment('08:00', 'HH:mm');
   const day_mincha_1 = moment('12:45', 'HH:mm');
   if (params.dst === "true") {
-    day_shacharit.add(30, 'minute');
+    // Shabbat Chol HaMoed Sukkot is at 08:00 even in summer DST due to Megillat Kohelet and extended chag prayers
+    if (!weekHebrewInfo.isShabbatCholHaMoedSukkot) {
+      day_shacharit.add(30, 'minute');
+    }
     day_mincha_1.add(30, 'minute');
   }
   const day_mincha_1_shiur = day_mincha_1.clone().add(20, 'minute');
@@ -395,8 +403,6 @@ export async function calculateTimes(params: any): Promise<any> {
   }
 
   console.log("Weekday arvit: " + week_arvit_1);
-
-  const weekHebrewInfo = await fetchHebrewCalendarWeekInfo(shabbat);
 
   const has_rosh_chodesh = params.has_rosh_chodesh !== undefined
     ? params.has_rosh_chodesh === "true" || params.has_rosh_chodesh === true
