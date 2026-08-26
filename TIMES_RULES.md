@@ -55,9 +55,18 @@ Ashkenazi custom requires at least 4 days of Selichot before Rosh Hashanah:
 | :--- | :--- | :--- | :--- |
 | **חודש אלול (Single-week)** | 1 Tishrei falls on Thursday or Shabbat $\rightarrow$ Starts Motzaei Shabbat 26 or 24 Elul | **`05:55`** | 4 to 6 days before Rosh Hashanah |
 | **חודש אלול (Multi-week)** | 1 Tishrei falls on Monday or Tuesday $\rightarrow$ Starts Motzaei Shabbat 22 or 21 Elul | **`05:55`** | Two full weeks of Selichot before RH |
+| **ערב ראש השנה (29 אלול)** | 29 Elul | **סליחות ושחרית מניין א׳: `06:00`**<br>**סליחות מניין ב׳: `07:30`** (במבואה)<br>**שחרית מניין ב׳: `08:30`** | *אין מניין 07:10*. סליחות ארוכות (זכור ברית) והתרת נדרים לאחר התפילה |
 | **עשרת ימי תשובה (Regular days)** | Weekdays 3–8 Tishrei (except Tzom Gedaliah) | **`05:50`** | Monday through Thursday |
 | **צום גדליה** | 3 Tishrei (or 4 Tishrei when postponed from Shabbat) | **`05:45`** | Earlier start due to extended fast Selichot |
 | **ערב יום כיפור (9 תשרי)** | 9 Tishrei | *No early Selichot* | Brief Selichot recited during Shacharit |
+
+### פרטי סדר תפילות ערב ראש השנה (29 אלול)
+- **מניין ראשון (השכמה):** סליחות מוקדמות (זכור ברית) ולאחריהן שחרית בשעה **`06:00`**.
+- **מניין שני:**
+  - **אין מניין שחרית בשעה 07:10.**
+  - **סליחות:** מתחילות בשעה **`07:30`** (מתחיל במבואה).
+  - **שחרית:** מתחילה בשעה **`08:30`**.
+- **התרת נדרים:** מתקיימת לאחר שני המניינים.
 
 ---
 

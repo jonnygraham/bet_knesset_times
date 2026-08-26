@@ -113,6 +113,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
   let fastInfo: { name: string; is_tisha_bav: boolean; is_tzom_gedaliah: boolean; date: Moment } | null = null;
   let hasTzomGedaliah = false;
   let tzomGedaliahDayStr = '';
+  let hasErevRoshHashana = false;
+  let erevRoshHashanaDayStr = '';
   let elulSelichotCount = 0;
   let aytSelichotCount = 0;
 
@@ -153,6 +155,12 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
         hasTzomGedaliah = true;
         tzomGedaliahDayStr = shortDay;
       }
+    }
+
+    // Check Erev Rosh Hashanah (29 Elul)
+    if (hm === 'Elul' && hd === 29) {
+      hasErevRoshHashana = true;
+      erevRoshHashanaDayStr = shortDay;
     }
 
     // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva (05:45 on Tzom Gedaliah, excluding 9 Tishrei / Erev Yom Kippur)
@@ -229,6 +237,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     fastDaysStr,
     fastMincha,
     fastArvit,
+    hasErevRoshHashana,
+    erevRoshHashanaDayStr,
   };
 }
 
@@ -476,6 +486,8 @@ export async function calculateTimes(params: any): Promise<any> {
     fast_mincha: fast_mincha,
     fast_arvit: fast_arvit,
     week_shacharit_fast: week_shacharit_fast,
+    has_erev_rosh_hashana: weekHebrewInfo.hasErevRoshHashana,
+    erev_rosh_hashana_day_str: weekHebrewInfo.erevRoshHashanaDayStr,
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm')
   }
