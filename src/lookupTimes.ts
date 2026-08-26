@@ -115,6 +115,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
   let tzomGedaliahDayStr = '';
   let hasErevRoshHashana = false;
   let erevRoshHashanaDayStr = '';
+  let hasErevYomKippur = false;
+  let erevYomKippurDayStr = '';
   let elulSelichotCount = 0;
   let aytSelichotCount = 0;
 
@@ -163,7 +165,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
       erevRoshHashanaDayStr = shortDay;
     }
 
-    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva (05:45 on Tzom Gedaliah, excluding 9 Tishrei / Erev Yom Kippur)
+    // Check Ashkenazi Selichot: 05:55 in Elul, 05:50 in Aseret Yemei Teshuva (05:45 on Tzom Gedaliah, 06:00 on 9 Tishrei / Erev Yom Kippur)
     let isSelichot = false;
     if (hm === 'Elul') {
       const startElulDay = await getSelichotStartElulDay(hy);
@@ -173,11 +175,14 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
         otherSelichotDays.push(shortDay);
       }
     } else if (hm === 'Tishrei') {
-      // 3 to 8 Tishrei only (exclude 9 Tishrei / Erev Yom Kippur)
-      if (hd >= 3 && hd <= 8) {
+      // 3 to 9 Tishrei (9 Tishrei is Erev Yom Kippur: Selichot at 06:00)
+      if (hd >= 3 && hd <= 9) {
         isSelichot = true;
         aytSelichotCount++;
-        if (!fast || !fast.is_tzom_gedaliah) {
+        if (hd === 9) {
+          hasErevYomKippur = true;
+          erevYomKippurDayStr = shortDay;
+        } else if (!fast || !fast.is_tzom_gedaliah) {
           otherSelichotDays.push(shortDay);
         }
       }
@@ -239,6 +244,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     fastArvit,
     hasErevRoshHashana,
     erevRoshHashanaDayStr,
+    hasErevYomKippur,
+    erevYomKippurDayStr,
   };
 }
 
@@ -488,6 +495,8 @@ export async function calculateTimes(params: any): Promise<any> {
     week_shacharit_fast: week_shacharit_fast,
     has_erev_rosh_hashana: weekHebrewInfo.hasErevRoshHashana,
     erev_rosh_hashana_day_str: weekHebrewInfo.erevRoshHashanaDayStr,
+    has_erev_yom_kippur: weekHebrewInfo.hasErevYomKippur,
+    erev_yom_kippur_day_str: weekHebrewInfo.erevYomKippurDayStr,
     week_mincha: week_mincha.format('HH:mm'),
     week_arvit_1: week_arvit_1.format('HH:mm')
   }
