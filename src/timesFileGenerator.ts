@@ -189,7 +189,7 @@ function prepareShabbatTimes(times) {
     ...range(0, 0).map(() => EMPTY_TIME_ROW),
     { text: 'שחרית', time: times.day_shacharit, active: true },
     { text: 'קידוש', time: '', active: false },
-    { text: 'שיעור נשים', time: times.day_womens_shiur, active: true },
+    { text: 'שיעור נשים', time: times.day_womens_shiur || '', active: Boolean(times.day_womens_shiur) },
     ...range(0, 3).map(() => EMPTY_TIME_ROW),
     { text: 'מנחה גדולה', time: times.day_mincha_1, active: true },
     { text: 'שיעור הרב פרל', time: times.day_mincha_1_shiur, active: true },

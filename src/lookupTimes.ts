@@ -106,6 +106,9 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
   const isShabbatMevarchim = shabbatEvents.some((e: string) => e.includes('Mevarchim'));
   const isShabbatCholHaMoedSukkot = (shabbatInfo?.hm === 'Tishrei' && shabbatInfo?.hd >= 16 && shabbatInfo?.hd <= 21) ||
     shabbatEvents.some((e: string) => e.includes('Sukkot') && (e.includes('CH’’M') || e.includes('Chol')));
+  const isShabbatCholHaMoedPesach = (shabbatInfo?.hm === 'Nisan' && shabbatInfo?.hd >= 16 && shabbatInfo?.hd <= 20) ||
+    shabbatEvents.some((e: string) => e.includes('Pesach') && (e.includes('CH’’M') || e.includes('Chol')));
+  const isShabbatCholHaMoed = isShabbatCholHaMoedSukkot || isShabbatCholHaMoedPesach;
 
   const roshChodeshDays: string[] = [];
   const selichotDays: string[] = [];
@@ -249,6 +252,8 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     hasErevYomKippur,
     erevYomKippurDayStr,
     isShabbatCholHaMoedSukkot,
+    isShabbatCholHaMoedPesach,
+    isShabbatCholHaMoed,
   };
 }
 
@@ -367,10 +372,10 @@ export async function calculateTimes(params: any): Promise<any> {
     day_mincha_1.add(30, 'minute');
   }
   const day_mincha_1_shiur = day_mincha_1.clone().add(20, 'minute');
-  const day_womens_shiur = day_shacharit.clone().add(2, 'hour');
-  // if (params.dst !== "true") {
-  //   day_womens_shiur.add(10, 'minute');
-  // }
+  // No women's shiur on Shabbat Chol HaMoed due to long Shacharit & Musaf
+  const day_womens_shiur = weekHebrewInfo.isShabbatCholHaMoed
+    ? undefined
+    : day_shacharit.clone().add(2, 'hour').format('HH:mm');
 
   const motzash_arvit = await fetchTime(shabbat, 'צאת השבת');
 
@@ -467,7 +472,8 @@ export async function calculateTimes(params: any): Promise<any> {
     erev_mincha: params.erev_mincha ?? erev_mincha.format('HH:mm'),
     day_shacharit: params.day_shacharit ?? day_shacharit.format('HH:mm'),
     sof_zman_shema: sof_zman_shema.format('HH:mm'),
-    day_womens_shiur: params.day_womens_shiur ?? day_womens_shiur.format('HH:mm'),
+    day_womens_shiur: params.day_womens_shiur ?? day_womens_shiur,
+    is_shabbat_chol_hamoed: weekHebrewInfo.isShabbatCholHaMoed,
     day_mincha_1: params.day_mincha_1 ?? day_mincha_1.format('HH:mm'),
     day_mincha_1_shiur: params.day_mincha_1_shiur ?? day_mincha_1_shiur.format('HH:mm'),
     day_mincha_2: params.day_mincha_2 ?? day_mincha_2.format('HH:mm'),

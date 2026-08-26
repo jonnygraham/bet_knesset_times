@@ -15,7 +15,13 @@ export function formatTimesMarkdown(times: any): string {
     `מנחה ערב שבת – ${times.erev_mincha}`,
     'קבלת שבת וערבית',
     `שחרית – ${times.day_shacharit}`,
-    `שיעור לנשים – ${times.day_womens_shiur}`,
+  ];
+
+  if (times.day_womens_shiur) {
+    lines.push(`שיעור לנשים – ${times.day_womens_shiur}`);
+  }
+
+  lines.push(
     `מנחה גדולה – ${times.day_mincha_1}`,
     `שיעור – הרב מנחם פרל – ${times.day_mincha_1_shiur}`,
     `מנחה קטנה – ${times.day_mincha_2}`,
@@ -23,7 +29,7 @@ export function formatTimesMarkdown(times: any): string {
     'שבת שלום',
     '',
     'זמני תפילות ימי חול',
-  ];
+  );
 
   // Weekday Times
   if (times.has_selichot) {
