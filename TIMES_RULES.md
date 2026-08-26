@@ -12,13 +12,19 @@
 | :--- | :--- | :--- |
 | **מנחה גדולה ערב שבת** | `14:30` | Active in summer schedule |
 | **מנחה וקבלת שבת** | $\text{Shabbat Shkia} - 14\text{ min}$, rounded down to nearest 5 min | e.g. Shkia `19:44` $\rightarrow$ `19:30` |
-| **שחרית שבת** | `08:00` (Winter) / `08:30` (Summer / DST) | Controlled by `dst` parameter |
+| **שחרית שבת** | **`08:00`** (Wintertime) / **`08:30`** (Summertime / clocks 1 hr forward) | Controlled by `dst` parameter (`dst=true` $\rightarrow$ `08:30`, `dst=false` $\rightarrow$ `08:00`) |
 | **סוף זמן קריאת שמע** | סוף זמן קריאת שמע מג״א / גר״א | Fetched directly from 2net |
 | **שיעור נשים** | $\text{Shacharit} + 2\text{ hours}$ | `10:00` (Winter) / `10:30` (Summer) |
 | **מנחה גדולה שבת** | `12:45` (Winter) / `13:15` (Summer / DST) | Controlled by `dst` parameter |
 | **שיעור הרב פרל** | $\text{Mincha Gedola} + 20\text{ min}$ | `13:05` (Winter) / `13:35` (Summer) |
 | **מנחה קטנה שבת** | $\text{Shabbat Shkia} - 40\text{ min}$, rounded down to nearest 5 min | Followed by Seudah Shlishit |
 | **ערבית מוצאי שבת** | צאת השבת | Fetched directly from 2net |
+
+### כללי שעון קיץ / שעון חורף (Summer & Winter Schedule Rules)
+- **שחרית שבת:** מתחילה בשעה **`08:00`** בשעון חורף (Wintertime), ובשעה **`08:30`** בשעון קיץ (Summertime – כאשר מזיזים את השעון שעה אחת קדימה / clocks 1 hour forward).
+- **מנחה גדולה שבת:** מתחילה בשעה **`12:45`** בשעון חורף, ובשעה **`13:15`** בשעון קיץ.
+- **שיעור נשים:** מתחיל שעתיים לאחר שחרית – **`10:00`** בחורף, **`10:30`** בקיץ.
+- **מנחה גדולה ערב שבת:** **`14:30`** (פעילה בלוח שעון קיץ בלבד).
 
 ### Shabbat Titles & Special Shabbatot
 - **שבת מברכים (Shabbat Mevarchim):** Appended to flyer title (`שבת – פרשת {parsha} – שבת מברכים`) on the Shabbat preceding Rosh Chodesh of any month **except Chodesh Tishrei** (Rosh Hashanah is not blessed). Also applies when Rosh Chodesh falls on the following Friday or Shabbat.
