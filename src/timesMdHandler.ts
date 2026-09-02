@@ -52,7 +52,7 @@ export function formatTimesMarkdown(times: any): string {
   if (times.has_rosh_chodesh) {
     shacharitLine += `, ר"ח (${times.rosh_chodesh_days_str}) ${times.week_shacharit_rh}`;
   }
-  if (times.has_fast) {
+  if (times.has_fast && times.week_shacharit_fast) {
     shacharitLine += `, ${times.fast_name} (${times.fast_days_str}) ${times.week_shacharit_fast}`;
   }
   lines.push(shacharitLine);

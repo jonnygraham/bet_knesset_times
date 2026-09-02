@@ -237,7 +237,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     defaultSelichotTime,
     hasTzomGedaliah,
     tzomGedaliahDayStr,
-    tzomGedaliahSelichot: hasTzomGedaliah ? '05:45' : undefined,
+    tzomGedaliahSelichot: hasTzomGedaliah ? '05:50' : undefined,
     hasOtherSelichot,
     otherSelichotDaysStr,
     hasFast,
@@ -440,10 +440,8 @@ export async function calculateTimes(params: any): Promise<any> {
   const fast_days = weekHebrewInfo.fastDays;
   const fast_days_str = params.fast_days_str ?? weekHebrewInfo.fastDaysStr;
   const fast_mincha = params.fast_mincha ?? weekHebrewInfo.fastMincha;
-  const fast_arvit = params.fast_arvit ?? weekHebrewInfo.fastArvit;
-  const week_shacharit_fast = params.week_shacharit_fast ?? (is_tisha_bav ? "07:00, 08:30" : "06:05");
-
   const has_tzom_gedaliah = weekHebrewInfo.hasTzomGedaliah;
+  const week_shacharit_fast = params.week_shacharit_fast ?? (is_tisha_bav ? "07:00, 08:30" : (has_tzom_gedaliah ? undefined : "06:05"));
   const tzom_gedaliah_day_str = weekHebrewInfo.tzomGedaliahDayStr;
   const tzom_gedaliah_selichot = weekHebrewInfo.tzomGedaliahSelichot;
   const has_other_selichot = weekHebrewInfo.hasOtherSelichot;

@@ -65,7 +65,7 @@ Ashkenazi custom requires at least 4 days of Selichot before Rosh Hashanah:
 | **חודש אלול (Multi-week)** | 1 Tishrei falls on Monday or Tuesday $\rightarrow$ Starts Motzaei Shabbat 22 or 21 Elul | **`05:55`** | Two full weeks of Selichot before RH |
 | **ערב ראש השנה (29 אלול)** | 29 Elul | **מניין א׳:** סליחות **`06:00`**, שחרית (משוער) **`07:00`**<br>**מניין ב׳:** סליחות **`07:30`** (במבואה), שחרית (משוער) **`08:30`** | *אין מניין 07:10*. סליחות ארוכות (*זכור ברית*) והתרת נדרים לאחר שני המניינים |
 | **עשרת ימי תשובה (Regular days)** | Weekdays 3–8 Tishrei (except Tzom Gedaliah) | **`05:50`** | Monday through Thursday |
-| **צום גדליה** | 3 Tishrei (or 4 Tishrei when postponed from Shabbat) | **`05:45`** | Earlier start due to extended fast Selichot |
+| **צום גדליה** | 3 Tishrei (or 4 Tishrei when postponed from Shabbat) | **`05:50`** | Same as Aseret Yemei Teshuvah; precedes the 06:15 Shacharit |
 | **ערב יום כיפור (9 תשרי)** | 9 Tishrei | **`06:00`** | סליחות קצרות של ערב יום כיפור |
 
 ### פרטי סדר תפילות ערב ראש השנה (29 אלול)
@@ -82,20 +82,30 @@ Ashkenazi custom requires at least 4 days of Selichot before Rosh Hashanah:
 
 ### סליחות חצות לילה ושיעור מקדים (Midnight Selichot)
 - **מועד:** מתקיים **אך ורק במוצאי שבת ראשונה של סליחות** (First Motzaei Shabbat of Selichot ONLY).
-- **שיעור מקדים:** מתחיל **15 דקות לפני חצות הלילה** ($\text{Chatzot} - 15\text{ min}$, e.g. `00:20`), נמסר בדרך כלל על ידי **הרב כ״ץ (Rav Katz)**.
+- **שיעור מקדים:** מתחיל 15 דקות לפני חצות הלילה, **מעוגל תמיד מטה ל-5 דקות הקרובות**:
+  $$\text{Shiur Time} = \lfloor (\text{Halachic Midnight} - 15\text{ min}) \rfloor_{5\text{ min}}$$
+  * *דוגמה:* כאשר חצות לילה הלכתי חל ב-`00:38`, הפחתת 15 דק׳ מניבה `00:23`, המתעגלת מטה ל-**`00:20`**.
+  * השיעור נמסר בדרך כלל על ידי **הרב כ״ץ (Rav Katz)**.
 - **זמן סליחות חצות:** מתחילות בדיוק ב**חצות לילה הלכתי (Halachic Midnight)** (מחושב מ-2net / חצות הלכתי, בד״כ סביב `00:35`–`00:40` בשעון קיץ / `23:35`–`23:40` בשעון חורף).
 
 ---
 
 ## 5. Fast Days (צומות ותעניות)
 
-Applies to **Tzom Gedaliah**, **Asara B'Tevet**, **Ta'anit Esther**, **17 Tammuz**, and **Tisha B'Av** (excludes Yom Kippur):
+Applies to **Asara B'Tevet**, **Ta'anit Esther**, **17 Tammuz**, **Tzom Gedaliah**, and **Tisha B'Av** (excludes Yom Kippur):
 
-| Prayer | Minor Fasts (גדליה, י׳ בטבת, אסתר, י״ז בתמוז) | Tisha B'Av (תשעה באב) | Calculation & Rationale |
+| Prayer | Minor Fasts (י׳ בטבת, תענית אסתר, י״ז בתמוז) | Tisha B'Av (תשעה באב) | Calculation & Rationale |
 | :--- | :--- | :--- | :--- |
-| **שחרית** | **`06:05`** (early minyan) + `06:15`, `07:10`, `08:30` | **`07:00`** and **`08:30`** only | 9 Av has late morning minyanim with Kinot |
+| **שחרית** | **`06:05`** (early minyan) + `06:15`, `07:10`, `08:30` | **`07:00`** and **`08:30`** only | *`06:05` applies ONLY to 17 Tammuz, 10 Tevet, and Ta'anit Esther.* 9 Av has late minyanim with Kinot |
 | **מנחה** | $\text{Shkia} - 20\text{ min}$, rounded down to 5 min | $\text{Shkia} - 20\text{ min}$, rounded down to 5 min | Earlier start for Torah reading (ויחל), Haftarah, and Birkat Kohanim (e.g. `19:20` on 17 Tammuz) |
 | **ערבית / צאת הצום** | $\text{Shkia} + 18\text{ min}$ | $\text{Shkia} + 18\text{ min}$ | Exact Tzet HaKochavim / Motzei HaTzom on the fast date |
+
+### Tzom Gedaliah Shacharit Exception (חריג שחרית צום גדליה)
+- **Rationale:** On regular minor fast days (17 Tammuz, 10 Tevet, Ta'anit Esther), Selichot are recited during/after Shacharit, which necessitates advancing the early minyan to `06:05`. On Tzom Gedaliah (which falls during Aseret Yemei Teshuvah), Selichot are recited **before** tefillah at `05:50`. Therefore, there is no separate `06:05` early minyan on Tzom Gedaliah—only the standard `06:15` and `07:10` minyanim:
+  - **סליחות:** **`05:50`**
+  - **שחרית מניין א׳:** **`06:15`** (קריאת התורה *ויחל*)
+  - **שחרית מניין ב׳:** **`07:10`** (קריאת התורה *ויחל*)
+  - *No `06:05` early minyan on Tzom Gedaliah.*
 
 ---
 
@@ -202,3 +212,10 @@ All services are mapped under a unified CloudFront distribution:
 - `https://d1dv96azwhiqeg.cloudfront.net/docx` $\rightarrow$ Word Flyer Generator
 - `https://d1dv96azwhiqeg.cloudfront.net/csv` $\rightarrow$ CSV Generator
 - `https://d1dv96azwhiqeg.cloudfront.net/upload` $\rightarrow$ MyGabay Uploader
+
+---
+
+### 10. Astronomical Data Query Parameter Rule (2net)
+
+When querying astronomical data from the **2net Mevo Horon portal** (`calendar.2net.co.il`), all automated calls, scripts, or references must include the explicit target date parameter (`&today=YYYYMMDD`) to ensure precise astronomical calculations and prevent falling back to the current machine date.
+
