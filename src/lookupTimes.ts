@@ -237,7 +237,7 @@ export async function fetchHebrewCalendarWeekInfo(shabbat: Moment) {
     defaultSelichotTime,
     hasTzomGedaliah,
     tzomGedaliahDayStr,
-    tzomGedaliahSelichot: hasTzomGedaliah ? '05:50' : undefined,
+    tzomGedaliahSelichot: hasTzomGedaliah ? '05:45' : undefined,
     hasOtherSelichot,
     otherSelichotDaysStr,
     hasFast,

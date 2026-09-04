@@ -65,7 +65,7 @@ Ashkenazi custom requires at least 4 days of Selichot before Rosh Hashanah:
 | **חודש אלול (Multi-week)** | 1 Tishrei falls on Monday or Tuesday $\rightarrow$ Starts Motzaei Shabbat 22 or 21 Elul | **`05:55`** | Two full weeks of Selichot before RH |
 | **ערב ראש השנה (29 אלול)** | 29 Elul | **מניין א׳:** סליחות **`06:00`**, שחרית (משוער) **`07:00`**<br>**מניין ב׳:** סליחות **`07:30`** (במבואה), שחרית (משוער) **`08:30`** | *אין מניין 07:10*. סליחות ארוכות (*זכור ברית*) והתרת נדרים לאחר שני המניינים |
 | **עשרת ימי תשובה (Regular days)** | Weekdays 3–8 Tishrei (except Tzom Gedaliah) | **`05:50`** | Monday through Thursday |
-| **צום גדליה** | 3 Tishrei (or 4 Tishrei when postponed from Shabbat) | **`05:50`** | Same as Aseret Yemei Teshuvah; precedes the 06:15 Shacharit |
+| **צום גדליה** | 3 Tishrei (or 4 Tishrei when postponed from Shabbat) | **`05:45`** | סליחות ארוכות יותר (כוללות פיוטי תענית); מקדימות את מניין שחרית ראשון ב-06:15 |
 | **ערב יום כיפור (9 תשרי)** | 9 Tishrei | **`06:00`** | סליחות קצרות של ערב יום כיפור |
 
 ### פרטי סדר תפילות ערב ראש השנה (29 אלול)
@@ -82,7 +82,7 @@ Ashkenazi custom requires at least 4 days of Selichot before Rosh Hashanah:
 
 ### סליחות חצות לילה ושיעור מקדים (Midnight Selichot)
 - **מועד:** מתקיים **אך ורק במוצאי שבת ראשונה של סליחות** (First Motzaei Shabbat of Selichot ONLY).
-- **שיעור מקדים:** מתחיל 15 דקות לפני חצות הלילה, **מעוגל תמיד מטה ל-5 דקות הקרובות**:
+- **שיעור מקדים:** שעת השיעור המקדים תיקבע ל-15 דקות לפני חצות הלכתי, ותעוגל תמיד כלפי מטה ל-5 דקות הקודמות:
   $$\text{Shiur Time} = \lfloor (\text{Halachic Midnight} - 15\text{ min}) \rfloor_{5\text{ min}}$$
   * *דוגמה:* כאשר חצות לילה הלכתי חל ב-`00:38`, הפחתת 15 דק׳ מניבה `00:23`, המתעגלת מטה ל-**`00:20`**.
   * השיעור נמסר בדרך כלל על ידי **הרב כ״ץ (Rav Katz)**.
@@ -100,12 +100,14 @@ Applies to **Asara B'Tevet**, **Ta'anit Esther**, **17 Tammuz**, **Tzom Gedaliah
 | **מנחה** | $\text{Shkia} - 20\text{ min}$, rounded down to 5 min | $\text{Shkia} - 20\text{ min}$, rounded down to 5 min | Earlier start for Torah reading (ויחל), Haftarah, and Birkat Kohanim (e.g. `19:20` on 17 Tammuz) |
 | **ערבית / צאת הצום** | $\text{Shkia} + 18\text{ min}$ | $\text{Shkia} + 18\text{ min}$ | Exact Tzet HaKochavim / Motzei HaTzom on the fast date |
 
-### Tzom Gedaliah Shacharit Exception (חריג שחרית צום גדליה)
-- **Rationale:** On regular minor fast days (17 Tammuz, 10 Tevet, Ta'anit Esther), Selichot are recited during/after Shacharit, which necessitates advancing the early minyan to `06:05`. On Tzom Gedaliah (which falls during Aseret Yemei Teshuvah), Selichot are recited **before** tefillah at `05:50`. Therefore, there is no separate `06:05` early minyan on Tzom Gedaliah—only the standard `06:15` and `07:10` minyanim:
-  - **סליחות:** **`05:50`**
-  - **שחרית מניין א׳:** **`06:15`** (קריאת התורה *ויחל*)
-  - **שחרית מניין ב׳:** **`07:10`** (קריאת התורה *ויחל*)
-  - *No `06:05` early minyan on Tzom Gedaliah.*
+### Tzom Gedaliah Shacharit Exception (החרגת שחרית צום גדליה)
+- **החרגת צום גדליה ממניין 06:05 והסבר:**
+  - מניין השכמה ב-**`06:05`** חל אך ורק בצומות הקלים הרגילים (י״ז בתמוז, עשרה בטבת, תענית אסתר) שבהם סליחות נאמרות בתוך התפילה.
+  - בצום גדליה (החל בעשרת ימי תשובה) הסליחות נאמרות לפני התפילה (בשעה **`05:45`**), ולכן **אין מניין ב-`06:05`**, אלא מניין שחרית ראשון ב-**`06:15`** ומניין שני ב-**`07:10`** בלבד:
+    - **סליחות:** **`05:45`** (סליחות צום גדליה ארוכות יותר וכוללות פיוטי תענית, שעתן מעוגנת ל-05:45 כדי להספיק לסיים לקראת שחרית ב-06:15)
+    - **שחרית מניין א׳:** **`06:15`** (קריאת התורה *ויחל*)
+    - **שחרית מניין ב׳:** **`07:10`** (קריאת התורה *ויחל*)
+    - *אין מניין 06:05 בצום גדליה.*
 
 ---
 
@@ -145,23 +147,20 @@ Based on the established schedule for **בית כנסת משכן לוי**, here 
 | :--- | :--- | :--- |
 | **שחרית יום א׳** | **`07:30`** | תפילת חג |
 | **תקיעת שופר (משוער)** | **`09:30`** | **רק כאשר יום א׳ אינו שבת!** (אם יום א׳ חל בשבת — אין תוקעים בשופר ביום א׳) |
-| **מנחה גדולה** | **`13:15`** (שעון קיץ) / **`12:45`** (שעון חורף) | |
-| **מנחה קטנה (כשיום א׳ יום חול)** | $\text{Shkia} - 50\text{ min}$ (e.g. שקיעה `18:35` $\rightarrow$ `17:45`) | מוקדם יותר כדי לאפשר **תשליך** ו**דבר תורה** (`18:30`) לפני השקיעה |
-| **מנחה קטנה (כשיום א׳ שבת)** | $\text{Shkia} - 40\text{ min}$ מעוגל מטה ל-5 דק׳ (e.g. שקיעה `18:50` $\rightarrow$ `18:10`) | בדיוק כמו שבת רגילה (אין תשליך בשבת) |
+| **מנחה קטנה** | **`18:00`** | בשבת קודש: מאפשר שהות מספקת לסעודה שלישית לפני השקיעה; בימי חול: מאפשר שהות לתשליך |
 | **תשליך** | לאחר מנחה קטנה | **רק כאשר יום א׳ חל ביום חול** (אם יום א׳ שבת — נדחה ליום ב׳) |
-| **ערבית יום ב׳ של ר״ה** | **צאת הכוכבים המדויק** מ-2net ($\text{Shkia} + 19\text{–}20\text{ min}$) | e.g. `18:55` ביום חול / `19:10` במוצ״ש |
-| **הכנות / הדלקת נרות ליום ב׳** | **צאת השבת / צאת הכוכבים** המדויק מ-2net | חל איסור מוחלט להכין מיום א׳ ליום ב׳ לפני זמן זה |
+| **ערבית ליל ב׳ (מוצאי שבת)** | **`19:27`** | צאת השבת |
+| **הכנות / הדלקת נרות ליום ב׳** | **`19:27`** | מצאת השבת בלבד; חל איסור מוחלט להכין מיום א׳ ליום ב׳ לפני זמן זה |
 
 ### C. יום ב׳ של ראש השנה (2 תשרי)
 | Prayer / Event | Time Calculation | Halachic Notes |
 | :--- | :--- | :--- |
 | **שחרית יום ב׳** | **`07:30`** | תפילת חג |
 | **תקיעת שופר (משוער)** | **`09:30`** | תקיעות דמיושב ומוסף (חובה בכל שנה) |
-| **מנחה גדולה** | **`13:15`** (שעון קיץ) / **`12:45`** (שעון חורף) | |
-| **מנחה קטנה (כשיום א׳ היה חול)** | $\text{Shkia} - 25\text{ min}$ (e.g. שקיעה `18:34` $\rightarrow$ `18:10`) | אין תשליך (בוצע ביום א׳) ולכן מנחה מאוחרת יותר |
-| **מנחה קטנה (כשיום א׳ היה שבת)** | $\text{Shkia} - 40\text{ min}$ (e.g. שקיעה `18:49` $\rightarrow$ `18:05` או `18:10`) | מוקדמת יותר כדי לאפשר **תשליך** מיד לאחר התפילה |
-| **תשליך** | לאחר מנחה קטנה | **נאמר ביום ב׳ כאשר יום א׳ של ר״ה חל בשבת** |
-| **ערבית מוצאי חג** | **צאת הכוכבים / צאת החג** המדויק מ-2net | e.g. `18:55` / `19:17` (ולאחריה הבדלה וצאת החג) |
+| **מנחה קטנה** | **`18:00`** | מאפשר שהות מספקת לאמירת תשליך בציבור לפני השקיעה |
+| **תשליך** | לאחר מנחה קטנה | **נאמר בציבור ביום ב׳ כאשר יום א׳ של ר״ה חל בשבת** |
+| **שיעור בהיכל בית הכנסת** | **`19:00`** | שיעור בהיכל בית הכנסת |
+| **ערבית מוצאי יום ב׳ (צאת החג)** | **`19:27`** | צאת החג, ולאחריה הבדלה |
 
 ---
 
@@ -215,7 +214,9 @@ All services are mapped under a unified CloudFront distribution:
 
 ---
 
-### 10. Astronomical Data Query Parameter Rule (2net)
+### 10. Astronomical Data Query Parameter Rule (שליפת זמנים מלוח 2net מבוא חורון)
 
 When querying astronomical data from the **2net Mevo Horon portal** (`calendar.2net.co.il`), all automated calls, scripts, or references must include the explicit target date parameter (`&today=YYYYMMDD`) to ensure precise astronomical calculations and prevent falling back to the current machine date.
+בכל פנייה לשליפת נתונים אסטרונומיים מלוח 2net מבוא חורון יש לצרף את פרמטר התאריך המפורש: `&today=YYYYMMDD`.
+
 
