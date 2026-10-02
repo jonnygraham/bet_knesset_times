@@ -116,10 +116,15 @@ Applies to **Asara B'Tevet**, **Ta'anit Esther**, **17 Tammuz**, **Tzom Gedaliah
 ## 6. Chol HaMoed (חול המועד - פסח וסוכות)
 
 ### ימי חול המועד (Weekdays of Chol HaMoed)
-Applies to weekdays of **Chol HaMoed Pesach** (16–20 Nisan) and **Chol HaMoed Sukkot** (16–21 Tishrei / Hoshana Rabbah):
+Applies to weekdays of **Chol HaMoed Pesach** (16–20 Nisan) and **Chol HaMoed Sukkot** (16–20 Tishrei):
 - **שחרית חוה״מ:** **`07:00`** and **`08:30`** only.
 - Regular `06:15` minyan is suspended during Chol HaMoed.
 - Displayed with day indicators, e.g., `חוה"מ (ד'-ו') – שחרית: 07:00, 08:30`.
+
+### הושענא רבה (Hoshana Rabbah)
+Applies to 21 Tishrei:
+- **שחרית מניין א׳:** **`06:45`** (Advances from 07:00 to accommodate 1 hour and 45 minutes for the extended Tefillah).
+- **שחרית מניין ב׳:** **`08:30`** (Remains the same as standard Chol HaMoed).
 
 ### שבת חול המועד (Shabbat Chol HaMoed)
 - **שחרית שבת חוה״מ סוכות:** **`08:00`** (גם בשעון קיץ / DST) עקב קריאת מגילת קהלת, הושענות ומוסף מוארך של חג.
@@ -164,6 +169,12 @@ Based on the established schedule for **בית כנסת משכן לוי**, here 
 | **שיעור בהיכל בית הכנסת** | **`19:00`** | שיעור בהיכל בית הכנסת |
 | **ערבית מוצאי יום ב׳ (צאת החג)** | **`19:27`** | צאת החג, ולאחריה הבדלה |
 
+### D. Gabbay Reminders & Tips (הערות לגבאי)
+- **כרטיסי פתיחה (Peticha Cards):** Remember to download and print the cards for פתיחה.
+  - Link 1: [https://www.babakama.co.il/downloads/item/id/16](https://www.babakama.co.il/downloads/item/id/16)
+  - Link 2: [https://www.babakama.co.il/downloads/item/id/35](https://www.babakama.co.il/downloads/item/id/35)
+  - **Agent Verification:** The AI agent must verify that these documents have been updated for the current year before downloading/printing.
+
 ---
 
 ---
@@ -194,9 +205,42 @@ Based on the established schedule for **בית כנסת משכן לוי**, here 
 | **תקיעת שופר** | $\text{Shkia} + 20\text{ to }21\text{ min}$ | `18:45` | בצאת הכוכבים עם סיום פסוקי "ה׳ הוא האלקים" |
 | **צאת הצום וערבית** | $\text{Shkia} + 35\text{ to }36\text{ min}$ | `19:00` | צאת הצום לכל הדעות, תפילת ערבית, הבדלה (על נר ששבת) וקידוש לבנה |
 
+### C. Gabbay Reminders & Tips (הערות לגבאי)
+- **כרטיסי פתיחה (Peticha Cards):** Remember to download and print the cards for פתיחה.
+  - Link 1: [https://www.babakama.co.il/downloads/item/id/16](https://www.babakama.co.il/downloads/item/id/16)
+  - Link 2: [https://www.babakama.co.il/downloads/item/id/35](https://www.babakama.co.il/downloads/item/id/35)
+  - **Agent Verification:** The AI agent must verify that these documents have been updated for the current year before downloading/printing.
+- **Yom Kippur Tip:** The פתיחה for **לדוד מזמור** should **not** be given out as a separate honor, as it just continues directly from the previous פתיחה.
 ---
 
-## 9. System Architecture & Distribution
+## 9. Shemini Atzeret & Simchat Torah (שמיני עצרת ושמחת תורה)
+
+Based on the schedule for **בית כנסת משכן לוי**, here are the times and rules for Simchat Torah (example shown for when it falls on Shabbat):
+
+### A. ערב שבת וחג (Friday - Erev Shabbat & Chag)
+| Prayer / Event | Time | Notes |
+| :--- | :--- | :--- |
+| **מנחה גדולה** | **`14:30`** | |
+| **הדלקת נרות** | לפי הלוח | e.g. `18:04` |
+| **מנחה ערב שבת וחג** | **הדלקת נרות + 6 דק' משוער** | e.g. `18:10` |
+| **קבלת שבת, ערבית והקפות** | לאחר מנחה | |
+| **המשך הקפות לכלל בישוב** | **`22:00`** | לאחר הסעודה |
+
+### B. יום שבת קודש - יום חג (Shabbat - Chag Day)
+| Prayer / Event | Time | Notes |
+| :--- | :--- | :--- |
+| **שחרית** | **`08:15`** | |
+| **הקפות** | **`09:15`** | |
+| **קריאת התורה בתחנות** | לאחר הקפות | |
+| **קידוש** | **`11:00`** | |
+| **כל הנערים וחתנים** | **`11:30`** | |
+| **סיום משוער ומנחה** | **`13:00`** | מנחה (גדולה) מתקיימת מיד לאחר סיום התפילה |
+| **מנחה קטנה** | לפי הלוח | e.g. `17:40` |
+| **ערבית מוצאי שבת וחג** | צאת החג | e.g. `18:59` |
+
+---
+
+## 10. System Architecture & Distribution
 
 The system generates prayer times across 5 automated channels:
 
@@ -216,9 +260,10 @@ All services are mapped under a unified CloudFront distribution:
 
 ---
 
-### 10. Astronomical Data Query Parameter Rule (שליפת זמנים מלוח 2net מבוא חורון)
+### 11. Astronomical Data Query Parameter Rule (שליפת זמנים מלוח 2net מבוא חורון)
 
 When querying astronomical data from the **2net Mevo Horon portal** (`calendar.2net.co.il`), all automated calls, scripts, or references must include the explicit target date parameter (`&today=YYYYMMDD`) to ensure precise astronomical calculations and prevent falling back to the current machine date.
 בכל פנייה לשליפת נתונים אסטרונומיים מלוח 2net מבוא חורון יש לצרף את פרמטר התאריך המפורש: `&today=YYYYMMDD`.
+
 
 
