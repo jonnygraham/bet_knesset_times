@@ -1,3 +1,4 @@
 pydantic-ai[google]
 playwright
 httpx
+pypdf

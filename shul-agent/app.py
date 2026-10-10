@@ -80,16 +80,63 @@ async def get_anim_zmirot(ctx: RunContext[None]) -> str:
 
 
 async def get_minhagim(ctx: RunContext[None]) -> str:
-    """Browse the UniSyn minhagim page and return the current month's halachic calendar content."""
+    """Browse the UniSyn minhagim page and return the current month's halachic calendar content.
+    If an embedded PDF is found, it will extract its text as well."""
+    import io
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        PdfReader = None
+
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=["--no-sandbox", "--disable-gpu", "--single-process"])
         try:
             page = await browser.new_page()
             await page.goto(UNISYN_URL, timeout=30000, wait_until="networkidle")
             text = await page.inner_text("body")
+            
+            pdf_urls = await page.evaluate(
+                "Array.from(document.querySelectorAll('object[type=\"application/pdf\"]')).map(el => el.data)"
+            )
+            pdf_urls += await page.evaluate(
+                "Array.from(document.querySelectorAll('a[href$=\".pdf\"]')).map(el => el.href)"
+            )
+            
+            pdf_text = ""
+            if pdf_urls and PdfReader:
+                pdf_url = pdf_urls[0]
+                if pdf_url.startswith('/'):
+                    pdf_url = 'https://unisyn.org.il' + pdf_url
+                
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(pdf_url, timeout=30)
+                if resp.status_code == 200:
+                    reader = PdfReader(io.BytesIO(resp.content))
+                    for pdf_page in reader.pages:
+                        extracted = pdf_page.extract_text()
+                        if extracted:
+                            pdf_text += extracted + "\n"
         finally:
             await browser.close()
-    return text[:15000]
+    
+    full_text = text + "\n\n--- PDF CONTENT ---\n" + pdf_text
+    return full_text[:15000]
+
+
+
+async def get_hebcal_events(ctx: RunContext[None]) -> str:
+    """Get the Hebcal events (including Shabbat Mevarchim and Molad times) for the upcoming week."""
+    import datetime
+    today = datetime.datetime.now()
+    events = []
+    async with httpx.AsyncClient() as client:
+        for i in range(8):
+            d = today + datetime.timedelta(days=i)
+            resp = await client.get(f"https://www.hebcal.com/converter?cfg=json&gy={d.year}&gm={d.month}&gd={d.day}&g2h=1")
+            data = resp.json()
+            if data.get("events"):
+                events.append(f"{d.strftime('%Y-%m-%d')}: {', '.join(data['events'])}")
+    return "\n".join(events)
 
 
 async def get_shabbat_times(ctx: RunContext[None]) -> str:
@@ -120,7 +167,8 @@ async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int
 def _split_message(message: str, limit: int = 450) -> list[str]:
     """Split message keeping chunks under the limit. Splits on single newlines."""
     lines = message.split("\n")
-    chunks, current = [], ""
+    chunks, current = "" , ""
+    chunks = []
     for line in lines:
         candidate = (current + "\n" + line) if current else line
         if len(candidate) > limit:
@@ -160,7 +208,7 @@ def _get_agent(model: str = MODELS[0]):
     _ensure_gemini_key()
     return Agent(
         model,
-        tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot],
+        tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot, get_hebcal_events],
         system_prompt=(
             "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
             "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
@@ -178,7 +226,7 @@ def _get_agent(model: str = MODELS[0]):
             "   b) *דינים ומנהגים* section: key dinim for THIS Shabbat only\n"
             "   c) If this is שבת מברכים, add a separate *ברכת החודש* section stating:\n"
             "      which month, which day(s) it falls on, and the מולד (exact time).\n"
-            "      Look up the molad from the minhagim page.\n"
+            "      Use get_hebcal_events to find the exact molad time and translate it to Hebrew.\n"
             "   d) *עליות לפרשת בר מצוה* section: list of names\n"
             "   e) *אנעים זמירות*: the boy's name\n"
             "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
