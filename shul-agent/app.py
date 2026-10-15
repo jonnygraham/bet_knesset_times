@@ -101,21 +101,25 @@ async def get_minhagim(ctx: RunContext[None]) -> str:
             pdf_urls += await page.evaluate(
                 "Array.from(document.querySelectorAll('a[href$=\".pdf\"]')).map(el => el.href)"
             )
+            pdf_urls = [u for u in pdf_urls if u]
             
             pdf_text = ""
             if pdf_urls and PdfReader:
-                pdf_url = pdf_urls[0]
-                if pdf_url.startswith('/'):
-                    pdf_url = 'https://unisyn.org.il' + pdf_url
-                
-                async with httpx.AsyncClient() as client:
-                    resp = await client.get(pdf_url, timeout=30)
-                if resp.status_code == 200:
-                    reader = PdfReader(io.BytesIO(resp.content))
-                    for pdf_page in reader.pages:
-                        extracted = pdf_page.extract_text()
-                        if extracted:
-                            pdf_text += extracted + "\n"
+                try:
+                    pdf_url = pdf_urls[0]
+                    if pdf_url.startswith('/'):
+                        pdf_url = 'https://unisyn.org.il' + pdf_url
+                    
+                    async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}) as client:
+                        resp = await client.get(pdf_url, timeout=30)
+                    if resp.status_code == 200:
+                        reader = PdfReader(io.BytesIO(resp.content))
+                        for pdf_page in reader.pages:
+                            extracted = pdf_page.extract_text()
+                            if extracted:
+                                pdf_text += extracted + "\n"
+                except Exception as pdf_err:
+                    print(f"Error extracting PDF: {pdf_err}")
         finally:
             await browser.close()
     
@@ -129,13 +133,16 @@ async def get_hebcal_events(ctx: RunContext[None]) -> str:
     import datetime
     today = datetime.datetime.now()
     events = []
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}) as client:
         for i in range(8):
             d = today + datetime.timedelta(days=i)
-            resp = await client.get(f"https://www.hebcal.com/converter?cfg=json&gy={d.year}&gm={d.month}&gd={d.day}&g2h=1")
-            data = resp.json()
-            if data.get("events"):
-                events.append(f"{d.strftime('%Y-%m-%d')}: {', '.join(data['events'])}")
+            try:
+                resp = await client.get(f"https://www.hebcal.com/converter?cfg=json&gy={d.year}&gm={d.month}&gd={d.day}&g2h=1", timeout=10)
+                data = resp.json()
+                if data.get("events"):
+                    events.append(f"{d.strftime('%Y-%m-%d')}: {', '.join(data['events'])}")
+            except Exception as e:
+                print(f"Hebcal error for {d}: {e}")
     return "\n".join(events)
 
 
