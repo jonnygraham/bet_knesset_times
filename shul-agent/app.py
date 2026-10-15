@@ -262,7 +262,8 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
                     model_settings=ModelSettings(max_tokens=4096),
                     usage_limits=UsageLimits(request_limit=20),
                 )
-                print(f"Agent completed ({model}). Usage: {result.usage()}")
+                usage = result.usage() if callable(getattr(result, "usage", None)) else getattr(result, "usage", "")
+                print(f"Agent completed ({model}). Usage: {usage}")
                 message = result.output
                 message = message.replace("\\'", "'").replace('\\"', '"')
                 if send:
