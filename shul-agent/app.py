@@ -155,54 +155,24 @@ async def get_shabbat_times(ctx: RunContext[None]) -> str:
     return resp.text[:5000]
 
 
-async def _send_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> int:
-    url = (
-        f"https://api.whatabot.net/whatsapp/sendMessage"
-        f"?apikey={api_key}"
-        f"&text={urllib.parse.quote(text)}"
-        f"&phone={urllib.parse.quote(PHONE)}"
-    )
-    for attempt in range(3):
-        resp = await client.get(url, timeout=30)
-        print(f"WhatsApp chunk ({len(text)} chars) attempt {attempt+1}: {resp.status_code} {resp.text[:200]}")
-        if resp.status_code != 429:
-            return resp.status_code
-        await asyncio.sleep(6)
-    return resp.status_code
-
-
-def _split_message(message: str, limit: int = 450) -> list[str]:
-    """Split message keeping chunks under the limit. Splits on single newlines."""
-    lines = message.split("\n")
-    chunks, current = "" , ""
-    chunks = []
-    for line in lines:
-        candidate = (current + "\n" + line) if current else line
-        if len(candidate) > limit:
-            if current:
-                chunks.append(current.strip())
-            current = line
-        else:
-            current = candidate
-    if current.strip():
-        chunks.append(current.strip())
-    return chunks
-
-
-async def _send_whatsapp(message: str):
+async def _send_telegram(message: str):
     message = message.replace("\\'", "'").replace('\\"', '"')
-    print(f"Message to send:\n{message}")
-    api_key = get_param("/shul-agent/whatabot-api-key")
-    chunks = _split_message(message)
-    print(f"Split into {len(chunks)} chunks")
-    statuses = []
+    print(f"Message to send to Telegram:\n{message}")
+    token = get_param("/shul-agent/telegram-token")
+    chat_id = get_param("/shul-agent/telegram-chat-id")
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown",
+    }
     async with httpx.AsyncClient() as client:
-        for i, chunk in enumerate(chunks):
-            if i > 0:
-                await asyncio.sleep(6)
-            status = await _send_chunk(client, api_key, chunk)
-            statuses.append(status)
-    print(f"WhatsApp sent in {len(chunks)} parts, statuses: {statuses}")
+        resp = await client.post(url, json=payload, timeout=30)
+        print(f"Telegram response ({resp.status_code}): {resp.text}")
+        if resp.status_code != 200:
+            payload.pop("parse_mode", None)
+            resp2 = await client.post(url, json=payload, timeout=30)
+            print(f"Telegram fallback response ({resp2.status_code}): {resp2.text}")
 
 
 _agent = None
@@ -217,13 +187,13 @@ def _get_agent(model: str = MODELS[0]):
         model,
         tools=[get_minhagim, get_shabbat_times, get_aliyot, get_anim_zmirot, get_hebcal_events],
         system_prompt=(
-            "You are a shul (synagogue) weekly assistant preparing a WhatsApp message for the גבאים.\n"
+            "You are a shul (synagogue) weekly assistant preparing a message for the גבאים.\n"
             "1. Use get_shabbat_times to get tefillah times. The response includes the parsha name.\n"
             "2. Use get_aliyot with the parsha name to get members who get an aliyah.\n"
             "3. Use get_anim_zmirot to get the full schedule, then find the boy for this parsha.\n"
             "   Parsha names may be fuzzy (e.g. 'צו - שבת הגדול' matches צו). Use best match.\n"
             "4. Use get_minhagim to read halachic minhagim from the UniSyn page.\n"
-            "5. Return a WhatsApp message in Hebrew for the גבאים with this EXACT structure:\n"
+            "5. Return a message in Hebrew for the גבאים with this EXACT structure:\n"
             "   a) *זמני תפילות* section with these EXACT labels:\n"
             "      מנחה וקבלת שבת: {erev_mincha}\n"
             "      מנחה שבת: {day_mincha_2}\n"
@@ -236,7 +206,7 @@ def _get_agent(model: str = MODELS[0]):
             "      Use get_hebcal_events to find the exact molad time and translate it to Hebrew.\n"
             "   d) *עליות לפרשת בר מצוה* section: list of names\n"
             "   e) *אנעים זמירות*: the boy's name\n"
-            "   IMPORTANT: Use WhatsApp formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
+            "   IMPORTANT: Use formatting: *bold* (single stars), _italic_ (underscores). NOT markdown **double stars**.\n"
             "   Do NOT escape quotes. Write \" not \\\".\n"
             "Return ONLY the message text, nothing else."
         ),
@@ -267,7 +237,7 @@ async def _run(weeks_ahead: int = 1, send: bool = True):
                 message = result.output
                 message = message.replace("\\'", "'").replace('\\"', '"')
                 if send:
-                    await _send_whatsapp(message)
+                    await _send_telegram(message)
                 else:
                     print(f"Message (send=false):\n{message}")
                 return message
