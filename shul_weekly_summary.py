@@ -14,7 +14,7 @@ import sys
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
-from pypdf import PdfReader
+import yaml
 
 SHEETS = {
     "bar_mitzvah": "1He76e8XjXrfSs9mvtVDWtIeeckv_YVuM9t-tcFpJLvo",
@@ -33,16 +33,14 @@ def get_telegram_creds() -> tuple[str, str]:
         sec_path = os.path.expanduser("~/.picoclaw/.security.yml")
         if os.path.exists(sec_path) and not token:
             with open(sec_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if "token:" in line:
-                        token = line.split("token:")[1].strip().strip('"').strip("'")
-                        break
+                sec = yaml.safe_load(f)
+                token = sec.get("channel_list", {}).get("telegram", {}).get("settings", {}).get("token", "")
 
         cfg_path = os.path.expanduser("~/.picoclaw/config.json")
         if os.path.exists(cfg_path) and not chat_id:
             with open(cfg_path, "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-                allow_from = cfg.get("telegram", {}).get("allow_from", [])
+                allow_from = cfg.get("channel_list", {}).get("telegram", {}).get("allow_from", [])
                 if allow_from:
                     chat_id = str(allow_from[0])
     except Exception as e:
