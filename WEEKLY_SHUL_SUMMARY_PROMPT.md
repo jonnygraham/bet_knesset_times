@@ -66,11 +66,9 @@ Construct the message in Hebrew with this EXACT structure:
 - Do not escape quotes. Write " not \".
 
 ## 4. Send to Telegram
-Send the generated message to Telegram using:
-- Bot Token: `8845113248:AAEBcrmVcmFbIN8OlTxliLJb-xt6ZWNdrWw`
-- Chat ID: `8338881978`
-
-Use `curl` or a python snippet to POST to `https://api.telegram.org/bot<TOKEN>/sendMessage` with JSON `{"chat_id": "8338881978", "text": message, "parse_mode": "Markdown"}`.
-If sending fails with parse error, send without `parse_mode`.
+Send the generated message to Telegram using the Telegram Bot credentials from your workspace rules (`sendMessage` endpoint):
+- URL: `https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/sendMessage`
+- JSON payload: `{"chat_id": "<TELEGRAM_CHAT_ID>", "text": message, "parse_mode": "Markdown"}`
+If sending fails with a parse error, retry without `parse_mode`.
 
 Confirm delivery and print the message.

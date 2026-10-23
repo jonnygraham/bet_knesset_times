@@ -22,8 +22,33 @@ SHEETS = {
 }
 TIMES_JSON_URL = "https://akxhxwhqfecfqv3dm6gu7y7d7u0kmqft.lambda-url.us-east-1.on.aws/"
 UNISYN_PAGE_URL = "https://unisyn.org.il/%D7%9C%D7%95%D7%97-%D7%93%D7%99%D7%A0%D7%99%D7%9D-%D7%95%D7%9E%D7%A0%D7%94%D7%92%D7%99%D7%9D"
-TELEGRAM_BOT_TOKEN = "8845113248:AAEBcrmVcmFbIN8OlTxliLJb-xt6ZWNdrWw"
-TELEGRAM_CHAT_ID = "8338881978"
+def get_telegram_creds() -> tuple[str, str]:
+    """Retrieve Telegram bot token and chat ID from environment or picoclaw configuration."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if token and chat_id:
+        return token, chat_id
+
+    try:
+        sec_path = os.path.expanduser("~/.picoclaw/.security.yml")
+        if os.path.exists(sec_path) and not token:
+            with open(sec_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if "token:" in line:
+                        token = line.split("token:")[1].strip().strip('"').strip("'")
+                        break
+
+        cfg_path = os.path.expanduser("~/.picoclaw/config.json")
+        if os.path.exists(cfg_path) and not chat_id:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                allow_from = cfg.get("telegram", {}).get("allow_from", [])
+                if allow_from:
+                    chat_id = str(allow_from[0])
+    except Exception as e:
+        print(f"Warning: Failed to load Telegram credentials from picoclaw: {e}", file=sys.stderr)
+
+    return token or "", chat_id or ""
 
 
 def fetch_sheet(sheet_id: str) -> list[dict]:
@@ -208,17 +233,26 @@ def generate_message() -> str:
 
 
 def send_telegram(message: str) -> bool:
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    token, chat_id = get_telegram_creds()
+    if not token or not chat_id:
+        print("Error: Telegram credentials (bot token or chat ID) not configured.", file=sys.stderr)
+        return False
+
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": chat_id,
         "text": message,
         "parse_mode": "Markdown",
     }
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        res = json.loads(resp.read().decode("utf-8"))
-        return res.get("ok", False)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            return res.get("ok", False)
+    except Exception as e:
+        print(f"Error sending message to Telegram: {e}", file=sys.stderr)
+        return False
 
 
 if __name__ == "__main__":
