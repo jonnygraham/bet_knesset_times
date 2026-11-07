@@ -285,6 +285,7 @@ When querying astronomical data from the **2net Mevo Horon portal** (`calendar.2
 The digital prayer board uploads are automated via AWS EventBridge rules triggering the `/upload` endpoint:
 - **Thursday 18:00 UTC:** Triggers `upload=weekday` for the upcoming week's weekday schedule (Sunday–Friday).
 - **Saturday 19:00 UTC:** Triggers `upload=shabbat` for the upcoming Shabbat schedule.
+- **DST Handling:** Israel Daylight Saving Time (DST) is automatically detected by the Lambda via Node.js native `Intl` (`Asia/Jerusalem`). Explicit `dst=true` or `dst=false` query parameters are optional and only needed to force a manual override.
 
 #### Weekday Calculation Gotcha (`lookupTimes.ts`)
 - In `lookupTimes.ts`, weekday prayer times are calculated for the week *following* the target Shabbat (`const sunday = shabbat.clone().add(1, 'day')`).
@@ -292,7 +293,7 @@ The digital prayer board uploads are automated via AWS EventBridge rules trigger
 - On Saturday night / Motzei Shabbat, `calculateTimes` rolls over to *next* Shabbat (+7 days). Invoking `upload=weekday` without an explicit `shabbat` query parameter calculates weekdays for two weeks ahead (+8 days), skipping the immediate coming week!
 - **Rule for manual Motzei Shabbat / Sunday uploads:** When manually updating weekday times on Saturday night or Sunday, always supply the explicit date of the Shabbat that just concluded:
   ```bash
-  curl -s "https://d1dv96azwhiqeg.cloudfront.net/upload?upload=weekday&shabbat=YYYY-MM-DD&dst=false"
+  curl -s "https://d1dv96azwhiqeg.cloudfront.net/upload?upload=weekday&shabbat=YYYY-MM-DD"
   ```
 
 
