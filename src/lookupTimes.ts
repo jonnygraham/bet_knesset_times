@@ -289,6 +289,16 @@ export async function fetchParsha(date: Moment): Promise<string> {
   return pageString.match(r)![1];
 }
 
+export function isIsraelDst(dateStr: string): boolean {
+  const date = new Date(`${dateStr}T12:00:00Z`);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    timeZoneName: 'shortOffset',
+  }).formatToParts(date);
+  const tz = parts.find((p) => p.type === 'timeZoneName')?.value;
+  return tz === 'GMT+3';
+}
+
 export async function calculateTimes(params: any): Promise<any> {
   const calendar = {
     "2022-11-12": { parsha: "וירא", shkia: "16:42" },
@@ -358,13 +368,15 @@ export async function calculateTimes(params: any): Promise<any> {
   const day_mincha_2 = shkiaMoment.clone().subtract(40, 'minute');
   day_mincha_2.subtract(day_mincha_2.get('minute') % 5, 'minute'); // Round down to 5 minutes
   const sof_zman_shema = await fetchTime(shabbat, 'סוף זמן קריאת שמע גרא');
-  //const dst = shkiaMoment.isDST();
+  const isDst = params.dst !== undefined
+    ? params.dst === "true"
+    : isIsraelDst(shabbatDate);
 
   const weekHebrewInfo = await fetchHebrewCalendarWeekInfo(shabbat);
 
   const day_shacharit = moment('08:00', 'HH:mm');
   const day_mincha_1 = moment('12:45', 'HH:mm');
-  if (params.dst === "true") {
+  if (isDst) {
     // Shabbat Chol HaMoed Sukkot is at 08:00 even in summer DST due to Megillat Kohelet and extended chag prayers
     if (!weekHebrewInfo.isShabbatCholHaMoedSukkot) {
       day_shacharit.add(30, 'minute');
@@ -464,6 +476,7 @@ export async function calculateTimes(params: any): Promise<any> {
 
   const calculatedParams = {
     ...params,
+    dst: isDst ? "true" : "false",
     parsha: parsha,
     is_shabbat_mevarchim: is_shabbat_mevarchim,
     shabbat_mevarchim: shabbat_mevarchim,

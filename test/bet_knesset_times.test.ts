@@ -1,17 +1,21 @@
-// import * as cdk from 'aws-cdk-lib';
-// import { Template } from 'aws-cdk-lib/assertions';
-// import * as BetKnessetTimes from '../lib/bet_knesset_times-stack';
+import { isIsraelDst } from '../src/lookupTimes';
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/bet_knesset_times-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new BetKnessetTimes.BetKnessetTimesStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+describe('Israel DST calculation', () => {
+  test('correctly identifies winter standard time (IST)', () => {
+    expect(isIsraelDst('2026-11-07')).toBe(false);
+    expect(isIsraelDst('2026-11-14')).toBe(false);
+    expect(isIsraelDst('2026-01-15')).toBe(false);
+  });
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
+  test('correctly identifies summer daylight saving time (IDT)', () => {
+    expect(isIsraelDst('2026-06-20')).toBe(true);
+    expect(isIsraelDst('2026-08-15')).toBe(true);
+  });
+
+  test('correctly identifies transition boundaries in 2026', () => {
+    expect(isIsraelDst('2026-03-21')).toBe(false);
+    expect(isIsraelDst('2026-03-28')).toBe(true);
+    expect(isIsraelDst('2026-10-24')).toBe(true);
+    expect(isIsraelDst('2026-10-31')).toBe(false);
+  });
 });

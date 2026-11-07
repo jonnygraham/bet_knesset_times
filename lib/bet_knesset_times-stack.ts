@@ -90,13 +90,12 @@ export class BetKnessetTimesStack extends Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
-    const isDst = 'false';
     // Rule for Thursday at 18:00 UTC to update weekday times for next week
     const thursdayRule = new events.Rule(this, 'ThursdayScheduleRule', {
       schedule: events.Schedule.cron({ minute: '0', hour: '18', weekDay: 'THU' }),
     });
     thursdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
-      event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'weekday' } }),
+      event: events.RuleTargetInput.fromObject({ queryStringParameters: { upload: 'weekday' } }),
     }));
 
     // Rule for Saturday at 19:00 UTC to update shabbat times for next week
@@ -104,7 +103,7 @@ export class BetKnessetTimesStack extends Stack {
       schedule: events.Schedule.cron({ minute: '0', hour: '19', weekDay: 'SAT' }),
     });
     saturdayRule.addTarget(new targets.LambdaFunction(timesUploaderHandler, {
-      event: events.RuleTargetInput.fromObject({ queryStringParameters: { dst: isDst, upload: 'shabbat' } }),
+      event: events.RuleTargetInput.fromObject({ queryStringParameters: { upload: 'shabbat' } }),
     }));
     
     new CfnOutput(this, 'Doc Generator (TimesGenerator) URL ', { value: docGenLambdaUrl.url });
